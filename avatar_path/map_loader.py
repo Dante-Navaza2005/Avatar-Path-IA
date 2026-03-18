@@ -17,12 +17,14 @@ def load_map(config: JourneyConfig) -> MapData:
         )
 
     checkpoints: dict[str, tuple[int, int]] = {}
+    cell_costs: list[int] = []
     valid_symbols = set(config.terrain_costs) | set(config.checkpoint_order)
 
     for row, line in enumerate(lines):
         for col, symbol in enumerate(line):
             if symbol not in valid_symbols:
                 raise ValueError(f"Símbolo desconhecido no mapa: {symbol!r} em ({row}, {col}).")
+            cell_costs.append(config.terrain_costs.get(symbol, config.checkpoint_cost))
             if symbol in config.checkpoint_order:
                 if symbol in checkpoints:
                     raise ValueError(f"Checkpoint duplicado no mapa: {symbol!r}.")
@@ -37,5 +39,5 @@ def load_map(config: JourneyConfig) -> MapData:
         terrain_costs=config.terrain_costs,
         checkpoint_cost=config.checkpoint_cost,
         checkpoints=checkpoints,
+        cell_costs=tuple(cell_costs),
     )
-

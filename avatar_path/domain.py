@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -42,6 +43,7 @@ class MapData:
     terrain_costs: dict[str, int]
     checkpoint_cost: int
     checkpoints: dict[str, Coordinate]
+    cell_costs: tuple[int, ...]
 
     @property
     def height(self) -> int:
@@ -66,6 +68,19 @@ class MapData:
     def cost(self, coord: Coordinate) -> int:
         symbol = self.cell(coord)
         return self.terrain_costs.get(symbol, self.checkpoint_cost)
+
+    def index(self, coord: Coordinate) -> int:
+        row, col = coord
+        return row * self.width + col
+
+    def coordinate(self, index: int) -> Coordinate:
+        return divmod(index, self.width)
+
+    def bitmap_for_coordinates(self, coordinates: Iterable[Coordinate]) -> tuple[int, ...]:
+        rows = [0] * self.height
+        for row, col in coordinates:
+            rows[row] |= 1 << col
+        return tuple(rows)
 
 
 @dataclass(frozen=True)
