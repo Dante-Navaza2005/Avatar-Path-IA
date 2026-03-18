@@ -37,6 +37,7 @@ class JourneyGUI(tk.Tk):
         self.after_handle: str | None = None
         self.current_frame_index = 0
         self.current_path_points: list[float] = []
+        self._selected_segment_index: int | None = None
         self.segment_last_frame_index = self._build_segment_index()
 
         self.title("Avatar Path IA")
@@ -209,7 +210,7 @@ class JourneyGUI(tk.Tk):
         self.segment_tree.column("movimento", width=60, anchor="center")
         self.segment_tree.column("etapa", width=70, anchor="center")
         self.segment_tree.column("equipe", width=220, anchor="w")
-        self.segment_tree.bind("<<TreeviewSelect>>", self._on_segment_selected)
+        self.segment_tree.bind("<ButtonRelease-1>", self._on_segment_clicked)
 
         tree_scroll = ttk.Scrollbar(segments_frame, orient="vertical", command=self.segment_tree.yview)
         tree_scroll.grid(row=0, column=1, sticky="ns")
@@ -237,14 +238,20 @@ class JourneyGUI(tk.Tk):
         height = map_data.height * self.cell_size + self.padding * 2
         self.canvas.configure(scrollregion=(0, 0, width, height))
 
+        self.canvas.create_rectangle(0, 0, width, height, fill="#f8f3e8", outline="")
+        self.base_map_photo = tk.PhotoImage(width=map_data.width, height=map_data.height)
+
         for row, line in enumerate(map_data.grid):
-            y1 = self.padding + row * self.cell_size
-            y2 = y1 + self.cell_size
-            for col, symbol in enumerate(line):
-                x1 = self.padding + col * self.cell_size
-                x2 = x1 + self.cell_size
-                fill = TERRAIN_COLORS.get(symbol, PARCHMENT)
-                self.canvas.create_rectangle(x1, y1, x2, y2, fill=fill, outline=fill)
+            row_colors = "{" + " ".join(TERRAIN_COLORS.get(symbol, PARCHMENT) for symbol in line) + "}"
+            self.base_map_photo.put(row_colors, to=(0, row))
+
+        self.scaled_map_photo = self.base_map_photo.zoom(self.cell_size, self.cell_size)
+        self.canvas.create_image(
+            self.padding,
+            self.padding,
+            image=self.scaled_map_photo,
+            anchor="nw",
+        )
 
         for checkpoint, coord in map_data.checkpoints.items():
             x1, y1, x2, y2 = self._coord_bounds(coord)
@@ -323,10 +330,19 @@ class JourneyGUI(tk.Tk):
         return points
 
     def _update_frame(self, frame_index: int, recenter: bool = False) -> None:
+        previous_frame_index = self.current_frame_index
         frame = self.frames[frame_index]
         segment = self.result.segments[min(frame.segment_index, len(self.result.segments) - 1)]
+
+        if frame_index == 0:
+            self.current_path_points = self._frame_path_points(frame_index)
+        elif frame_index == previous_frame_index + 1 and self.current_path_points:
+            center_x, center_y = self._coord_center(frame.coordinate)
+            self.current_path_points.extend((center_x, center_y))
+        else:
+            self.current_path_points = self._frame_path_points(frame_index)
+
         self.current_frame_index = frame_index
-        self.current_path_points = self._frame_path_points(frame_index)
         self.canvas.coords(self.path_line, *self.current_path_points)
 
         marker_radius = max(5, self.cell_size + 2)
@@ -399,6 +415,11 @@ class JourneyGUI(tk.Tk):
         item_id = f"segment-{segment_index}"
         if not self.segment_tree.exists(item_id):
             return
+        if self._selected_segment_index == segment_index:
+            self.segment_tree.see(item_id)
+            return
+
+        self._selected_segment_index = segment_index
         self.segment_tree.selection_set(item_id)
         self.segment_tree.see(item_id)
 
@@ -434,19 +455,22 @@ class JourneyGUI(tk.Tk):
 
     def _step_once(self) -> None:
         self._pause()
-        if self.current_frame_index < len(self.frames) - 1:
-            self._update_frame(self.current_frame_index + 1, recenter=True)
+        current_segment_index = self.frames[self.current_frame_index].segment_index
+        target_index = self.segment_last_frame_index.get(current_segment_index, self.current_frame_index)
 
-    def _on_segment_selected(self, _event: tk.Event) -> None:
-        selection = self.segment_tree.selection()
-        if not selection:
+        if target_index <= self.current_frame_index:
+            target_index = self.segment_last_frame_index.get(current_segment_index + 1, len(self.frames) - 1)
+
+        if target_index > self.current_frame_index:
+            self._update_frame(target_index, recenter=True)
+
+    def _on_segment_clicked(self, event: tk.Event) -> None:
+        item_id = self.segment_tree.identify_row(event.y)
+        if not item_id or not item_id.startswith("segment-"):
             return
 
         self._pause()
-        selected = selection[0]
-        if not selected.startswith("segment-"):
-            return
-        segment_index = int(selected.split("-")[1])
+        segment_index = int(item_id.split("-")[1])
         frame_index = self.segment_last_frame_index.get(segment_index)
         if frame_index is None:
             return
