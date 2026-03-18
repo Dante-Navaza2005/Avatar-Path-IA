@@ -1,0 +1,117 @@
+{
+  "map_path": "Instrucoes/MAPA_LENDA-AANG.txt",
+  "expected_height": 82,
+  "expected_width": 300,
+  "terrain_costs": {
+    ".": 1,
+    "R": 5,
+    "F": 10,
+    "V": 10,
+    "A": 15,
+    "M": 200
+  },
+  "checkpoint_order": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "B",
+    "C",
+    "D",
+    "E",
+    "G",
+    "H",
+    "I",
+    "J",
+    "K",
+    "L",
+    "N",
+    "O",
+    "P",
+    "Q",
+    "S",
+    "T",
+    "U",
+    "V",
+    "W",
+    "X",
+    "Y",
+    "Z"
+  ],
+  "stage_difficulties": {
+    "1": 10,
+    "2": 20,
+    "3": 30,
+    "4": 40,
+    "5": 50,
+    "6": 60,
+    "7": 70,
+    "8": 80,
+    "9": 90,
+    "B": 100,
+    "C": 110,
+    "D": 120,
+    "E": 130,
+    "G": 140,
+    "H": 150,
+    "I": 160,
+    "J": 170,
+    "K": 180,
+    "L": 190,
+    "N": 200,
+    "O": 210,
+    "P": 220,
+    "Q": 230,
+    "S": 240,
+    "T": 250,
+    "U": 260,
+    "V": 270,
+    "W": 280,
+    "X": 290,
+    "Y": 300
+  },
+  "characters": {
+    "Aang": {
+      "agility": 1.8,
+      "max_energy": 8
+    },
+    "Zukko": {
+      "agility": 1.6,
+      "max_energy": 8
+    },
+    "Toph": {
+      "agility": 1.6,
+      "max_energy": 8
+    },
+    "Katara": {
+      "agility": 1.6,
+      "max_energy": 8
+    },
+    "Sokka": {
+      "agility": 1.4,
+      "max_energy": 8
+    },
+    "Appa": {
+      "agility": 0.9,
+      "max_energy": 8
+    },
+    "Momo": {
+      "agility": 0.7,
+      "max_energy": 8
+    }
+  },
+  "checkpoint_cost": 1,
+  "block_future_checkpoints": true,
+  "visualization": {
+    "delay_seconds": 0.02,
+    "viewport_height": 21,
+    "viewport_width": 75,
+    "step_stride": 3
+  }
+}
