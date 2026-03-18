@@ -33,6 +33,14 @@ Rode a solução padrão:
 python3 main.py
 ```
 
+O modo padrão usa `--search auto`, compara `A*`, `Dijkstra` e `Greedy`, e mantém o melhor resultado com desempate a favor de `A*` para continuar aderente ao PDF.
+
+Para ver a comparação explicitamente:
+
+```bash
+python3 main.py --compare-search
+```
+
 Para abrir a interface gráfica:
 
 ```bash

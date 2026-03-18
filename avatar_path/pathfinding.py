@@ -21,15 +21,25 @@ def reconstruct_path(
     return tuple(path)
 
 
-def astar_shortest_path(
+def _best_first_search(
     map_data: MapData,
     start: Coordinate,
     goal: Coordinate,
+    priority_mode: str,
     blocked: frozenset[Coordinate] = frozenset(),
 ) -> tuple[tuple[Coordinate, ...], int, int]:
     frontier: list[tuple[int, int, Coordinate]] = []
     start_heuristic = manhattan_distance(start, goal) * map_data.minimum_step_cost
-    heappush(frontier, (start_heuristic, 0, start))
+    if priority_mode == "astar":
+        start_priority = start_heuristic
+    elif priority_mode == "dijkstra":
+        start_priority = 0
+    elif priority_mode == "greedy":
+        start_priority = start_heuristic
+    else:
+        raise ValueError(f"Algoritmo de busca desconhecido: {priority_mode}.")
+
+    heappush(frontier, (start_priority, 0, start))
 
     came_from: dict[Coordinate, Coordinate] = {}
     best_cost = {start: 0}
@@ -60,8 +70,56 @@ def astar_shortest_path(
 
             best_cost[neighbor] = tentative_cost
             came_from[neighbor] = current
-            priority = tentative_cost + manhattan_distance(neighbor, goal) * map_data.minimum_step_cost
+            heuristic = manhattan_distance(neighbor, goal) * map_data.minimum_step_cost
+            if priority_mode == "astar":
+                priority = tentative_cost + heuristic
+            elif priority_mode == "dijkstra":
+                priority = tentative_cost
+            else:
+                priority = heuristic
             heappush(frontier, (priority, tentative_cost, neighbor))
 
     raise ValueError(f"Não existe caminho entre {start} e {goal}.")
 
+
+def astar_shortest_path(
+    map_data: MapData,
+    start: Coordinate,
+    goal: Coordinate,
+    blocked: frozenset[Coordinate] = frozenset(),
+) -> tuple[tuple[Coordinate, ...], int, int]:
+    return _best_first_search(map_data, start, goal, "astar", blocked)
+
+
+def dijkstra_shortest_path(
+    map_data: MapData,
+    start: Coordinate,
+    goal: Coordinate,
+    blocked: frozenset[Coordinate] = frozenset(),
+) -> tuple[tuple[Coordinate, ...], int, int]:
+    return _best_first_search(map_data, start, goal, "dijkstra", blocked)
+
+
+def greedy_best_first_search(
+    map_data: MapData,
+    start: Coordinate,
+    goal: Coordinate,
+    blocked: frozenset[Coordinate] = frozenset(),
+) -> tuple[tuple[Coordinate, ...], int, int]:
+    return _best_first_search(map_data, start, goal, "greedy", blocked)
+
+
+def find_path(
+    map_data: MapData,
+    start: Coordinate,
+    goal: Coordinate,
+    algorithm: str = "astar",
+    blocked: frozenset[Coordinate] = frozenset(),
+) -> tuple[tuple[Coordinate, ...], int, int]:
+    if algorithm == "astar":
+        return astar_shortest_path(map_data, start, goal, blocked)
+    if algorithm == "dijkstra":
+        return dijkstra_shortest_path(map_data, start, goal, blocked)
+    if algorithm == "greedy":
+        return greedy_best_first_search(map_data, start, goal, blocked)
+    raise ValueError(f"Algoritmo de busca desconhecido: {algorithm}.")

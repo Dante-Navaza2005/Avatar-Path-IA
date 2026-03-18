@@ -2,7 +2,7 @@ import unittest
 
 from avatar_path.config import load_config
 from avatar_path.map_loader import load_map
-from avatar_path.planner import JourneyPlanner
+from avatar_path.planner import JourneyPlanner, compare_search_algorithms
 from avatar_path.team_planner import TeamPlanner
 from avatar_path.visualization import build_animation_frames
 
@@ -46,6 +46,15 @@ class JourneyPlannerTests(unittest.TestCase):
         self.assertEqual(frames[-1].movement_cost, result.movement_cost)
         self.assertEqual(round(frames[-1].stage_cost, 4), round(result.stage_cost, 4))
         self.assertEqual(round(frames[-1].total_cost, 4), round(result.total_cost, 4))
+
+    def test_search_comparison_prefers_astar(self):
+        config = load_config("config/default_config.json")
+        comparison = compare_search_algorithms(config)
+
+        self.assertEqual(comparison[0]["algorithm"], "astar")
+        self.assertEqual(comparison[0]["movement_cost"], 2807)
+        self.assertEqual(round(comparison[0]["total_cost"], 4), 4445.1436)
+        self.assertGreater(comparison[-1]["movement_cost"], comparison[0]["movement_cost"])
 
 
 if __name__ == "__main__":

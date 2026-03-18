@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+from time import perf_counter
+
 from avatar_path.domain import JourneyConfig, JourneyResult, SegmentResult
 from avatar_path.map_loader import load_map
-from avatar_path.pathfinding import astar_shortest_path
+from avatar_path.pathfinding import find_path
 from avatar_path.team_planner import TeamPlanner
 
 
 class JourneyPlanner:
-    def __init__(self, config: JourneyConfig) -> None:
+    def __init__(self, config: JourneyConfig, search_algorithm: str = "astar") -> None:
         self.config = config
+        self.search_algorithm = search_algorithm
 
     def solve(self) -> JourneyResult:
         map_data = load_map(self.config)
@@ -37,10 +40,11 @@ class JourneyPlanner:
                     for symbol in self.config.checkpoint_order[idx + 2 :]
                 )
 
-            path, segment_movement_cost, nodes_expanded = astar_shortest_path(
+            path, segment_movement_cost, nodes_expanded = find_path(
                 map_data=map_data,
                 start=start,
                 goal=goal,
+                algorithm=self.search_algorithm,
                 blocked=blocked,
             )
 
@@ -75,3 +79,42 @@ class JourneyPlanner:
             energy_usage=energy_usage,
         )
 
+
+def compare_search_algorithms(
+    config: JourneyConfig,
+    algorithms: tuple[str, ...] = ("astar", "dijkstra", "greedy"),
+) -> tuple[dict[str, float | int | str], ...]:
+    team_planner = TeamPlanner(
+        characters=config.characters,
+        ordered_stage_symbols=config.checkpoint_order[1:-1],
+        stage_difficulties=config.stage_difficulties,
+    )
+    _, _, stage_cost = team_planner.optimize()
+
+    results: list[dict[str, float | int | str]] = []
+    for algorithm in algorithms:
+        start = perf_counter()
+        result = JourneyPlanner(config, search_algorithm=algorithm).solve()
+        elapsed_ms = (perf_counter() - start) * 1000.0
+        results.append(
+            {
+                "algorithm": algorithm,
+                "movement_cost": result.movement_cost,
+                "stage_cost": round(stage_cost, 4),
+                "total_cost": round(result.movement_cost + stage_cost, 4),
+                "nodes_expanded": sum(segment.nodes_expanded for segment in result.segments),
+                "elapsed_ms": round(elapsed_ms, 2),
+            }
+        )
+
+    return tuple(
+        sorted(
+            results,
+            key=lambda item: (
+                item["total_cost"],
+                0 if item["algorithm"] == "astar" else 1,
+                item["nodes_expanded"],
+                item["elapsed_ms"],
+            ),
+        )
+    )
