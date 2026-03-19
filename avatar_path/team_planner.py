@@ -207,7 +207,7 @@ class TeamPlanner:
         )
 
         if not result.success:
-            raise ValueError(f"O solver inteiro não encontrou solução válida: {result.message}")
+            raise ValueError(f"O solver inteiro nÃ£o encontrou soluÃ§Ã£o vÃ¡lida: {result.message}")
 
         assignments = []
         usage = {name: 0 for name in self.names}
@@ -269,7 +269,7 @@ class TeamPlanner:
                             next_parents[next_energies] = (energies, mask)
 
             if not next_states:
-                raise ValueError("Não existe alocação válida de personagens para todas as etapas.")
+                raise ValueError("NÃ£o existe alocaÃ§Ã£o vÃ¡lida de personagens para todas as etapas.")
 
             pruned_states, pruned_parents = self._prune_layer(next_states, next_parents)
             layer_states = pruned_states
@@ -280,7 +280,7 @@ class TeamPlanner:
             key=lambda item: (item[1], -sum(item[0]), tuple(-value for value in item[0])),
         )
         if total_cost == float("inf"):
-            raise ValueError("Não existe alocação válida de personagens para todas as etapas.")
+            raise ValueError("NÃ£o existe alocaÃ§Ã£o vÃ¡lida de personagens para todas as etapas.")
 
         masks: list[int] = []
         current_state = best_final_state

@@ -4,7 +4,7 @@ import argparse
 
 from avatar_path.config import load_config
 from avatar_path.domain import JourneyResult
-from avatar_path.planner import JourneyPlanner, compare_search_algorithms
+from avatar_path.planner import JourneyPlanner, build_team_plan, compare_search_algorithms
 from avatar_path.visualization import animate_journey
 
 
@@ -115,15 +115,17 @@ def main() -> None:
     config = load_config(args.config)
     selected_algorithm = args.search
     comparison: tuple[dict[str, float | int | str], ...] = tuple()
+    team_plan = None
 
     if args.search == "auto" or args.compare_search:
-        comparison = compare_search_algorithms(config)
+        team_plan = build_team_plan(config)
+        comparison = compare_search_algorithms(config, team_plan=team_plan)
         selected_algorithm = str(comparison[0]["algorithm"])
 
     if args.compare_search:
         print_search_comparison(comparison)
 
-    result = JourneyPlanner(config, search_algorithm=selected_algorithm).solve()
+    result = JourneyPlanner(config, search_algorithm=selected_algorithm, team_plan=team_plan).solve()
 
     if args.gui:
         from avatar_path.gui import launch_gui
