@@ -17,7 +17,7 @@ class JourneyPlanner:
         map_data = load_map(self.config)
         team_planner = TeamPlanner(
             characters=self.config.characters,
-            ordered_stage_symbols=self.config.checkpoint_order[1:-1],
+            ordered_stage_symbols=self.config.checkpoint_order[1:],
             stage_difficulties=self.config.stage_difficulties,
         )
         assignments, energy_usage, stage_cost = team_planner.optimize()
@@ -71,6 +71,7 @@ class JourneyPlanner:
 
         return JourneyResult(
             config=self.config,
+            search_algorithm=self.search_algorithm,
             map_data=map_data,
             segments=tuple(segments),
             movement_cost=movement_cost,
@@ -86,7 +87,7 @@ def compare_search_algorithms(
 ) -> tuple[dict[str, float | int | str], ...]:
     team_planner = TeamPlanner(
         characters=config.characters,
-        ordered_stage_symbols=config.checkpoint_order[1:-1],
+        ordered_stage_symbols=config.checkpoint_order[1:],
         stage_difficulties=config.stage_difficulties,
     )
     _, _, stage_cost = team_planner.optimize()
@@ -100,8 +101,8 @@ def compare_search_algorithms(
             {
                 "algorithm": algorithm,
                 "movement_cost": result.movement_cost,
-                "stage_cost": round(stage_cost, 4),
-                "total_cost": round(result.movement_cost + stage_cost, 4),
+                "stage_cost": stage_cost,
+                "total_cost": result.movement_cost + stage_cost,
                 "nodes_expanded": sum(segment.nodes_expanded for segment in result.segments),
                 "elapsed_ms": round(elapsed_ms, 2),
             }

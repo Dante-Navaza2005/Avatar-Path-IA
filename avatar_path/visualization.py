@@ -15,6 +15,19 @@ from avatar_path.domain import (
 CLEAR_SCREEN = "\033[2J\033[H"
 
 
+def _format_search_algorithm_label(algorithm: str) -> str:
+    labels = {
+        "astar": "A*",
+        "dijkstra": "Dijkstra",
+        "greedy": "Greedy",
+    }
+    return labels.get(algorithm, algorithm)
+
+
+def _format_cost(value: float) -> str:
+    return f"{value:.6f}"
+
+
 def _display_symbol(
     map_data: MapData,
     coord: Coordinate,
@@ -59,7 +72,7 @@ def _render_viewport(
     return "\n".join(lines)
 
 
-def _segment_status(segment: SegmentResult) -> str:
+def _segment_status(segment: SegmentResult, search_label: str) -> str:
     if segment.stage_assignment is None:
         return f"Trecho {segment.start_symbol} -> {segment.end_symbol} | chegada final"
 
@@ -67,8 +80,8 @@ def _segment_status(segment: SegmentResult) -> str:
     return (
         f"Trecho {segment.start_symbol} -> {segment.end_symbol} | "
         f"etapa {segment.end_symbol} | equipe: {team} | "
-        f"movimento: {segment.movement_cost} | etapa: {segment.stage_assignment.time_cost:.4f} | "
-        f"total acumulado: {segment.cumulative_total_cost:.4f}"
+        f"{search_label}: {_format_cost(float(segment.movement_cost))} | combinatoria: {_format_cost(segment.stage_assignment.time_cost)} | "
+        f"total acumulado: {_format_cost(segment.cumulative_total_cost)}"
     )
 
 
@@ -129,6 +142,7 @@ def build_animation_frames(
 def animate_journey(result: JourneyResult, visualization: VisualizationConfig) -> None:
     visited: set[Coordinate] = set()
     frames = build_animation_frames(result, visualization.step_stride)
+    search_label = _format_search_algorithm_label(result.search_algorithm)
 
     for frame in frames[1:]:
         segment = result.segments[frame.segment_index]
@@ -151,9 +165,9 @@ def animate_journey(result: JourneyResult, visualization: VisualizationConfig) -
             CLEAR_SCREEN
             + frame_text
             + "\n\n"
-            + _segment_status(segment)
-            + f"\nMovimento acumulado: {movement_cost}"
-            + f"\nCusto acumulado das etapas: {segment_stage_cost:.4f}"
-            + f"\nCusto total acumulado: {total_cost:.4f}"
+            + _segment_status(segment, search_label)
+            + f"\nCusto acumulado da busca ({search_label}): {_format_cost(float(movement_cost))}"
+            + f"\nCusto acumulado da combinatoria: {_format_cost(segment_stage_cost)}"
+            + f"\nCusto total acumulado: {_format_cost(total_cost)}"
         )
         time.sleep(visualization.delay_seconds)

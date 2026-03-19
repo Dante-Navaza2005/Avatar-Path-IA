@@ -107,6 +107,7 @@ class SegmentResult:
 @dataclass(frozen=True)
 class JourneyResult:
     config: JourneyConfig
+    search_algorithm: str
     map_data: MapData
     segments: tuple[SegmentResult, ...]
     movement_cost: int

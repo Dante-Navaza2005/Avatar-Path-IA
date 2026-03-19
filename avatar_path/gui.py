@@ -26,10 +26,24 @@ TERRAIN_COLORS = {
 }
 
 
+def format_search_algorithm_label(algorithm: str) -> str:
+    labels = {
+        "astar": "A*",
+        "dijkstra": "Dijkstra",
+        "greedy": "Greedy",
+    }
+    return labels.get(algorithm, algorithm)
+
+
+def format_cost(value: float) -> str:
+    return f"{value:.6f}"
+
+
 class JourneyGUI(tk.Tk):
     def __init__(self, result: JourneyResult) -> None:
         super().__init__()
         self.result = result
+        self.search_label = format_search_algorithm_label(result.search_algorithm)
         self.frames = build_animation_frames(result, step_stride=1)
         self.cell_size = 5
         self.padding = 18
@@ -47,6 +61,9 @@ class JourneyGUI(tk.Tk):
 
         self.speed_var = tk.IntVar(value=18)
         self.status_var = tk.StringVar(value="Pronto para reproduzir a jornada.")
+        self.search_total_var = tk.StringVar(value=format_cost(float(result.movement_cost)))
+        self.combination_total_var = tk.StringVar(value=format_cost(result.stage_cost))
+        self.planned_total_var = tk.StringVar(value=format_cost(result.total_cost))
         self.position_var = tk.StringVar()
         self.progress_var = tk.StringVar()
         self.movement_var = tk.StringVar()
@@ -136,7 +153,7 @@ class JourneyGUI(tk.Tk):
         side_panel = ttk.Frame(root, style="App.TFrame")
         side_panel.grid(row=1, column=1, sticky="nsew")
         side_panel.columnconfigure(0, weight=1)
-        side_panel.rowconfigure(2, weight=1)
+        side_panel.rowconfigure(3, weight=1)
 
         controls = ttk.LabelFrame(side_panel, text="Controles", style="Panel.TLabelframe", padding=12)
         controls.grid(row=0, column=0, sticky="ew")
@@ -167,8 +184,24 @@ class JourneyGUI(tk.Tk):
             variable=self.speed_var,
         ).grid(row=3, column=0, columnspan=2, sticky="ew")
 
+        totals = ttk.LabelFrame(side_panel, text="Totais Planejados", style="Panel.TLabelframe", padding=12)
+        totals.grid(row=1, column=0, sticky="ew", pady=(12, 0))
+
+        total_rows = [
+            (f"Custo total da busca ({self.search_label})", self.search_total_var),
+            ("Custo total da combinatoria", self.combination_total_var),
+            ("Custo total final", self.planned_total_var),
+        ]
+        for row_index, (label, variable) in enumerate(total_rows):
+            ttk.Label(totals, text=f"{label}:", style="Body.TLabel").grid(
+                row=row_index, column=0, sticky="nw", padx=(0, 8), pady=2
+            )
+            ttk.Label(totals, textvariable=variable, style="Body.TLabel", wraplength=360, justify="left").grid(
+                row=row_index, column=1, sticky="w", pady=2
+            )
+
         summary = ttk.LabelFrame(side_panel, text="Estado Atual", style="Panel.TLabelframe", padding=12)
-        summary.grid(row=1, column=0, sticky="ew", pady=(12, 12))
+        summary.grid(row=2, column=0, sticky="ew", pady=(12, 12))
 
         info_rows = [
             ("Status", self.status_var),
@@ -176,9 +209,9 @@ class JourneyGUI(tk.Tk):
             ("Progresso", self.progress_var),
             ("Trecho", self.segment_var),
             ("Equipe", self.team_var),
-            ("Movimento", self.movement_var),
-            ("Etapas", self.stage_var),
-            ("Total", self.total_var),
+            (f"Busca acumulada ({self.search_label})", self.movement_var),
+            ("Combinatoria acumulada", self.stage_var),
+            ("Total acumulado", self.total_var),
             ("Nos expandidos", self.nodes_var),
             ("Energia", self.energy_var),
         ]
@@ -191,7 +224,7 @@ class JourneyGUI(tk.Tk):
             )
 
         segments_frame = ttk.LabelFrame(side_panel, text="Trechos Planejados", style="Panel.TLabelframe", padding=10)
-        segments_frame.grid(row=2, column=0, sticky="nsew")
+        segments_frame.grid(row=3, column=0, sticky="nsew")
         segments_frame.columnconfigure(0, weight=1)
         segments_frame.rowconfigure(0, weight=1)
 
@@ -203,8 +236,8 @@ class JourneyGUI(tk.Tk):
         )
         self.segment_tree.grid(row=0, column=0, sticky="nsew")
         self.segment_tree.heading("trecho", text="Trecho")
-        self.segment_tree.heading("movimento", text="Mov.")
-        self.segment_tree.heading("etapa", text="Etapa")
+        self.segment_tree.heading("movimento", text=self.search_label)
+        self.segment_tree.heading("etapa", text="Comb.")
         self.segment_tree.heading("equipe", text="Equipe")
         self.segment_tree.column("trecho", width=78, anchor="center")
         self.segment_tree.column("movimento", width=60, anchor="center")
@@ -306,7 +339,7 @@ class JourneyGUI(tk.Tk):
                 stage_label = "-"
                 team_label = "Chegada final"
             else:
-                stage_label = f"{assignment.time_cost:.2f}"
+                stage_label = format_cost(assignment.time_cost)
                 team_label = ", ".join(assignment.characters)
             self.segment_tree.insert(
                 "",
@@ -314,7 +347,7 @@ class JourneyGUI(tk.Tk):
                 iid=f"segment-{index}",
                 values=(
                     f"{segment.start_symbol}->{segment.end_symbol}",
-                    segment.movement_cost,
+                    format_cost(float(segment.movement_cost)),
                     stage_label,
                     team_label,
                 ),
@@ -358,9 +391,9 @@ class JourneyGUI(tk.Tk):
 
         self.position_var.set(f"linha {frame.coordinate[0]}, coluna {frame.coordinate[1]}")
         self.progress_var.set(f"frame {frame_index + 1}/{len(self.frames)} | passo {frame.segment_step_index}/{frame.segment_steps}")
-        self.movement_var.set(str(frame.movement_cost))
-        self.stage_var.set(f"{frame.stage_cost:.4f}")
-        self.total_var.set(f"{frame.total_cost:.4f}")
+        self.movement_var.set(format_cost(float(frame.movement_cost)))
+        self.stage_var.set(format_cost(frame.stage_cost))
+        self.total_var.set(format_cost(frame.total_cost))
         self.segment_var.set(f"{segment.start_symbol} -> {segment.end_symbol}")
         self.team_var.set(self._team_text(segment, frame))
         self.nodes_var.set(str(segment.nodes_expanded))
