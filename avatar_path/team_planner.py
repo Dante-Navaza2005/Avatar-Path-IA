@@ -97,21 +97,6 @@ class TeamPlanner:
         difficulty = self.stage_difficulties[stage_symbol]
         return (difficulty * 10.0) / self.agility_sum_by_mask[mask]
 
-    def _heuristic(self, stage_idx: int, energies: tuple[int, ...]) -> float:
-        remaining_symbols = self.stage_symbols[stage_idx:]
-        if not remaining_symbols:
-            return 0.0
-
-        available_agility = sum(
-            self.agility_units[idx]
-            for idx, energy in enumerate(energies)
-            if energy > 0
-        )
-        if available_agility == 0:
-            return float("inf")
-
-        return sum(self.stage_difficulties[symbol] for symbol in remaining_symbols) * 10.0 / available_agility
-
     def _deduplicated_actions(
         self,
         energies: tuple[int, ...],
@@ -207,7 +192,7 @@ class TeamPlanner:
         )
 
         if not result.success:
-            raise ValueError(f"O solver inteiro não encontrou solução válida: {result.message}")
+            raise ValueError(f"O solver inteiro nÃ£o encontrou soluÃ§Ã£o vÃ¡lida: {result.message}")
 
         assignments = []
         usage = {name: 0 for name in self.names}
@@ -269,7 +254,7 @@ class TeamPlanner:
                             next_parents[next_energies] = (energies, mask)
 
             if not next_states:
-                raise ValueError("Não existe alocação válida de personagens para todas as etapas.")
+                raise ValueError("NÃ£o existe alocaÃ§Ã£o vÃ¡lida de personagens para todas as etapas.")
 
             pruned_states, pruned_parents = self._prune_layer(next_states, next_parents)
             layer_states = pruned_states
@@ -280,7 +265,7 @@ class TeamPlanner:
             key=lambda item: (item[1], -sum(item[0]), tuple(-value for value in item[0])),
         )
         if total_cost == float("inf"):
-            raise ValueError("Não existe alocação válida de personagens para todas as etapas.")
+            raise ValueError("NÃ£o existe alocaÃ§Ã£o vÃ¡lida de personagens para todas as etapas.")
 
         masks: list[int] = []
         current_state = best_final_state

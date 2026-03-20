@@ -18,12 +18,12 @@ class JourneyPlannerTests(unittest.TestCase):
 
     def test_team_planner_respects_energy_limits(self):
         config = load_config("config/default_config.json")
-        planner = TeamPlanner(config.characters, config.checkpoint_order[1:-1], config.stage_difficulties)
+        planner = TeamPlanner(config.characters, config.checkpoint_order[1:], config.stage_difficulties)
 
         assignments, usage, total_cost = planner.optimize()
 
-        self.assertEqual(len(assignments), 30)
-        self.assertEqual(round(total_cost, 4), 1638.1436)
+        self.assertEqual(len(assignments), 31)
+        self.assertEqual(round(total_cost, 6), 1805.548602)
         self.assertTrue(all(count <= 8 for count in usage.values()))
         self.assertEqual(sum(usage.values()), 56)
 
@@ -33,8 +33,8 @@ class JourneyPlannerTests(unittest.TestCase):
 
         self.assertEqual(len(result.segments), 31)
         self.assertEqual(result.movement_cost, 2807)
-        self.assertEqual(round(result.stage_cost, 4), 1638.1436)
-        self.assertEqual(round(result.total_cost, 4), 4445.1436)
+        self.assertEqual(round(result.stage_cost, 6), 1805.548602)
+        self.assertEqual(round(result.total_cost, 6), 4612.548602)
 
     def test_animation_frames_cover_start_and_finish(self):
         config = load_config("config/default_config.json")
@@ -44,8 +44,8 @@ class JourneyPlannerTests(unittest.TestCase):
         self.assertEqual(frames[0].movement_cost, 0)
         self.assertEqual(frames[0].stage_cost, 0.0)
         self.assertEqual(frames[-1].movement_cost, result.movement_cost)
-        self.assertEqual(round(frames[-1].stage_cost, 4), round(result.stage_cost, 4))
-        self.assertEqual(round(frames[-1].total_cost, 4), round(result.total_cost, 4))
+        self.assertEqual(round(frames[-1].stage_cost, 6), round(result.stage_cost, 6))
+        self.assertEqual(round(frames[-1].total_cost, 6), round(result.total_cost, 6))
 
     def test_search_comparison_prefers_astar(self):
         config = load_config("config/default_config.json")
@@ -53,7 +53,7 @@ class JourneyPlannerTests(unittest.TestCase):
 
         self.assertEqual(comparison[0]["algorithm"], "astar")
         self.assertEqual(comparison[0]["movement_cost"], 2807)
-        self.assertEqual(round(comparison[0]["total_cost"], 4), 4445.1436)
+        self.assertEqual(round(comparison[0]["total_cost"], 6), 4612.548602)
         self.assertGreater(comparison[-1]["movement_cost"], comparison[0]["movement_cost"])
 
 

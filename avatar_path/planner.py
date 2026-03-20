@@ -2,25 +2,38 @@ from __future__ import annotations
 
 from time import perf_counter
 
-from avatar_path.domain import JourneyConfig, JourneyResult, SegmentResult
+from avatar_path.domain import JourneyConfig, JourneyResult, SegmentResult, StageAssignment
 from avatar_path.map_loader import load_map
 from avatar_path.pathfinding import find_path
 from avatar_path.team_planner import TeamPlanner
 
 
+TeamPlan = tuple[tuple[StageAssignment, ...], dict[str, int], float]
+
+
+def build_team_plan(config: JourneyConfig) -> TeamPlan:
+    team_planner = TeamPlanner(
+        characters=config.characters,
+        ordered_stage_symbols=config.checkpoint_order[1:],
+        stage_difficulties=config.stage_difficulties,
+    )
+    return team_planner.optimize()
+
+
 class JourneyPlanner:
-    def __init__(self, config: JourneyConfig, search_algorithm: str = "astar") -> None:
+    def __init__(
+        self,
+        config: JourneyConfig,
+        search_algorithm: str = "astar",
+        team_plan: TeamPlan | None = None,
+    ) -> None:
         self.config = config
         self.search_algorithm = search_algorithm
+        self.team_plan = team_plan
 
     def solve(self) -> JourneyResult:
         map_data = load_map(self.config)
-        team_planner = TeamPlanner(
-            characters=self.config.characters,
-            ordered_stage_symbols=self.config.checkpoint_order[1:-1],
-            stage_difficulties=self.config.stage_difficulties,
-        )
-        assignments, energy_usage, stage_cost = team_planner.optimize()
+        assignments, energy_usage, stage_cost = self.team_plan or build_team_plan(self.config)
         assignment_by_symbol = {assignment.stage_symbol: assignment for assignment in assignments}
 
         movement_cost = 0
@@ -71,37 +84,35 @@ class JourneyPlanner:
 
         return JourneyResult(
             config=self.config,
+            search_algorithm=self.search_algorithm,
             map_data=map_data,
             segments=tuple(segments),
             movement_cost=movement_cost,
             stage_cost=stage_cost,
             total_cost=movement_cost + stage_cost,
-            energy_usage=energy_usage,
+            energy_usage=dict(energy_usage),
         )
 
 
 def compare_search_algorithms(
     config: JourneyConfig,
     algorithms: tuple[str, ...] = ("astar", "dijkstra", "greedy"),
+    team_plan: TeamPlan | None = None,
 ) -> tuple[dict[str, float | int | str], ...]:
-    team_planner = TeamPlanner(
-        characters=config.characters,
-        ordered_stage_symbols=config.checkpoint_order[1:-1],
-        stage_difficulties=config.stage_difficulties,
-    )
-    _, _, stage_cost = team_planner.optimize()
+    resolved_team_plan = team_plan or build_team_plan(config)
+    _, _, stage_cost = resolved_team_plan
 
     results: list[dict[str, float | int | str]] = []
     for algorithm in algorithms:
         start = perf_counter()
-        result = JourneyPlanner(config, search_algorithm=algorithm).solve()
+        result = JourneyPlanner(config, search_algorithm=algorithm, team_plan=resolved_team_plan).solve()
         elapsed_ms = (perf_counter() - start) * 1000.0
         results.append(
             {
                 "algorithm": algorithm,
                 "movement_cost": result.movement_cost,
-                "stage_cost": round(stage_cost, 4),
-                "total_cost": round(result.movement_cost + stage_cost, 4),
+                "stage_cost": stage_cost,
+                "total_cost": result.movement_cost + stage_cost,
                 "nodes_expanded": sum(segment.nodes_expanded for segment in result.segments),
                 "elapsed_ms": round(elapsed_ms, 2),
             }

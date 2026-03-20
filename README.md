@@ -66,11 +66,11 @@ Tudo que o enunciado pede como configurável está em `config/default_config.jso
 
 ## Assunções necessárias
 
-O PDF tem uma inconsistência entre `0`, `1` e `Z` ao falar de início, fim e dificuldade. Para manter o problema coerente com o mapa e com o total de `30` etapas cronometradas, a implementação adota:
+O PDF tem uma inconsistência entre `0`, `1` e `Z` ao falar de início, fim e dificuldade. A implementação adota:
 
 - `0` como início da jornada, sem custo de etapa;
-- `Z` como fim da jornada, sem custo de etapa;
-- as etapas com dificuldade são `1..Y`.
+- as etapas com dificuldade são `1..Z`;
+- `Z` possui dificuldade `310`.
 
 Também foi adotado:
 
@@ -84,8 +84,8 @@ Ambas as escolhas podem ser alteradas no arquivo de configuração.
 Com o mapa `Instrucoes/MAPA_LENDA-AANG.txt` e a configuração padrão:
 
 - custo total de movimento: `2807`
-- custo total das etapas: `1638.1436`
-- custo total final: `4445.1436`
+- custo total das etapas: `1805.548602`
+- custo total final: `4612.548602`
 
 ## Testes
 

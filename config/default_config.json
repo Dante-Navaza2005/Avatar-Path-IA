@@ -6,7 +6,6 @@
     ".": 1,
     "R": 5,
     "F": 10,
-    "V": 10,
     "A": 15,
     "M": 200
   },
@@ -74,7 +73,8 @@
     "V": 270,
     "W": 280,
     "X": 290,
-    "Y": 300
+    "Y": 300,
+    "Z": 310
   },
   "characters": {
     "Aang": {
@@ -107,7 +107,7 @@
     }
   },
   "checkpoint_cost": 1,
-  "block_future_checkpoints": true,
+  "block_future_checkpoints": false,
   "visualization": {
     "delay_seconds": 0.02,
     "viewport_height": 21,
