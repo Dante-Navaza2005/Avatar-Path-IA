@@ -97,21 +97,6 @@ class TeamPlanner:
         difficulty = self.stage_difficulties[stage_symbol]
         return (difficulty * 10.0) / self.agility_sum_by_mask[mask]
 
-    def _heuristic(self, stage_idx: int, energies: tuple[int, ...]) -> float:
-        remaining_symbols = self.stage_symbols[stage_idx:]
-        if not remaining_symbols:
-            return 0.0
-
-        available_agility = sum(
-            self.agility_units[idx]
-            for idx, energy in enumerate(energies)
-            if energy > 0
-        )
-        if available_agility == 0:
-            return float("inf")
-
-        return sum(self.stage_difficulties[symbol] for symbol in remaining_symbols) * 10.0 / available_agility
-
     def _deduplicated_actions(
         self,
         energies: tuple[int, ...],
