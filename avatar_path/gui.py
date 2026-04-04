@@ -7,22 +7,36 @@ from avatar_path.domain import AnimationFrame, Coordinate, JourneyResult, Segmen
 from avatar_path.visualization import build_animation_frames
 
 
-PARCHMENT = "#f3ead7"
-PARCHMENT_DARK = "#ddc9a3"
-INK = "#2d2418"
-ACCENT = "#1d5b58"
-ACCENT_SOFT = "#e5f0ef"
-PATH_COLOR = "#d1495b"
-MARKER_COLOR = "#f4b942"
-CHECKPOINT_COLOR = "#b64029"
+BG = "#1e1e2e"
+BG_SURFACE = "#262637"
+BG_CARD = "#2e2e42"
+BG_CARD_HOVER = "#363650"
+TEXT_PRIMARY = "#e0e0f0"
+TEXT_SECONDARY = "#a0a0c0"
+TEXT_MUTED = "#707090"
+ACCENT = "#7c9ff5"
+ACCENT_DIM = "#5a7ad4"
+PATH_COLOR = "#f07070"
+MARKER_COLOR = "#f5c842"
+CHECKPOINT_COLOR = "#e06040"
+SEPARATOR_COLOR = "#3a3a55"
+BORDER_COLOR = "#3a3a55"
 
 TERRAIN_COLORS = {
-    ".": "#f7f2e7",
+    ".": "#c8c4b8",
     "R": "#8d98a0",
-    "F": "#629460",
-    "V": "#629460",
-    "A": "#7bb7da",
-    "M": "#9b6542",
+    "F": "#4a8a50",
+    "V": "#4a8a50",
+    "A": "#4a90c8",
+    "M": "#8a6542",
+}
+
+TERRAIN_LABELS = {
+    ".": "Plano",
+    "R": "Rochoso",
+    "V": "Floresta",
+    "A": "Agua",
+    "M": "Montanha",
 }
 
 
@@ -43,7 +57,7 @@ class JourneyGUI(tk.Tk):
         self.title("Avatar Path IA")
         self.geometry("1540x920")
         self.minsize(1320, 760)
-        self.configure(bg=PARCHMENT)
+        self.configure(bg=BG)
 
         self.speed_var = tk.IntVar(value=18)
         self.status_var = tk.StringVar(value="Pronto para reproduzir a jornada.")
@@ -76,51 +90,154 @@ class JourneyGUI(tk.Tk):
         except tk.TclError:
             pass
 
-        style.configure("App.TFrame", background=PARCHMENT)
-        style.configure("Card.TFrame", background=PARCHMENT_DARK)
-        style.configure("Panel.TLabelframe", background=PARCHMENT_DARK, foreground=INK)
-        style.configure("Panel.TLabelframe.Label", background=PARCHMENT_DARK, foreground=INK)
-        style.configure("Header.TLabel", background=PARCHMENT, foreground=INK, font=("Georgia", 24, "bold"))
-        style.configure("Subheader.TLabel", background=PARCHMENT, foreground=ACCENT, font=("Georgia", 11, "bold"))
-        style.configure("Body.TLabel", background=PARCHMENT_DARK, foreground=INK, font=("Helvetica", 11))
-        style.configure("Accent.TButton", background=ACCENT, foreground="white", font=("Helvetica", 11, "bold"))
-        style.map("Accent.TButton", background=[("active", "#174846")])
-        style.configure("Treeview", background="#fbf7ef", fieldbackground="#fbf7ef", foreground=INK, rowheight=24)
-        style.configure("Treeview.Heading", background=ACCENT_SOFT, foreground=INK, font=("Helvetica", 10, "bold"))
+        style.configure("App.TFrame", background=BG)
+        style.configure("Card.TFrame", background=BG_CARD)
+        style.configure("Surface.TFrame", background=BG_SURFACE)
+        style.configure(
+            "Panel.TLabelframe",
+            background=BG_CARD,
+            foreground=TEXT_SECONDARY,
+            bordercolor=BORDER_COLOR,
+            darkcolor=BORDER_COLOR,
+            lightcolor=BORDER_COLOR,
+        )
+        style.configure(
+            "Panel.TLabelframe.Label",
+            background=BG_CARD,
+            foreground=ACCENT,
+            font=("Segoe UI", 10, "bold"),
+        )
+        style.configure(
+            "Header.TLabel",
+            background=BG,
+            foreground=TEXT_PRIMARY,
+            font=("Segoe UI", 22, "bold"),
+        )
+        style.configure(
+            "Subheader.TLabel",
+            background=BG,
+            foreground=TEXT_SECONDARY,
+            font=("Segoe UI", 10),
+        )
+        style.configure(
+            "MapTitle.TLabel",
+            background=BG_CARD,
+            foreground=ACCENT,
+            font=("Segoe UI", 11, "bold"),
+        )
+        style.configure(
+            "Body.TLabel",
+            background=BG_CARD,
+            foreground=TEXT_SECONDARY,
+            font=("Segoe UI", 10),
+        )
+        style.configure(
+            "Value.TLabel",
+            background=BG_CARD,
+            foreground=TEXT_PRIMARY,
+            font=("Segoe UI", 10),
+        )
+        style.configure(
+            "SectionTitle.TLabel",
+            background=BG_CARD,
+            foreground=ACCENT,
+            font=("Segoe UI", 9, "bold"),
+        )
+        style.configure(
+            "Legend.TLabel",
+            background=BG_CARD,
+            foreground=TEXT_SECONDARY,
+            font=("Segoe UI", 9),
+        )
+        style.configure(
+            "Accent.TButton",
+            background=ACCENT,
+            foreground="white",
+            font=("Segoe UI", 10, "bold"),
+            borderwidth=0,
+            focuscolor=ACCENT,
+        )
+        style.map(
+            "Accent.TButton",
+            background=[("active", ACCENT_DIM), ("pressed", ACCENT_DIM)],
+        )
+        style.configure(
+            "Secondary.TButton",
+            background=BG_CARD_HOVER,
+            foreground=TEXT_PRIMARY,
+            font=("Segoe UI", 10),
+            borderwidth=0,
+            focuscolor=BG_CARD_HOVER,
+        )
+        style.map(
+            "Secondary.TButton",
+            background=[("active", SEPARATOR_COLOR), ("pressed", SEPARATOR_COLOR)],
+        )
+        style.configure(
+            "Treeview",
+            background=BG_SURFACE,
+            fieldbackground=BG_SURFACE,
+            foreground=TEXT_PRIMARY,
+            rowheight=26,
+            borderwidth=0,
+            font=("Segoe UI", 9),
+        )
+        style.configure(
+            "Treeview.Heading",
+            background=BG_CARD,
+            foreground=ACCENT,
+            font=("Segoe UI", 9, "bold"),
+            borderwidth=0,
+        )
+        style.map(
+            "Treeview",
+            background=[("selected", ACCENT_DIM)],
+            foreground=[("selected", "white")],
+        )
+        style.configure(
+            "Horizontal.TScale",
+            background=BG_CARD,
+            troughcolor=BG_SURFACE,
+            borderwidth=0,
+        )
 
     def _build_layout(self) -> None:
-        root = ttk.Frame(self, style="App.TFrame", padding=20)
+        root = ttk.Frame(self, style="App.TFrame", padding=16)
         root.pack(fill="both", expand=True)
         root.columnconfigure(0, weight=4)
         root.columnconfigure(1, weight=2)
         root.rowconfigure(1, weight=1)
 
         header = ttk.Frame(root, style="App.TFrame")
-        header.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 18))
+        header.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 14))
         header.columnconfigure(0, weight=1)
 
-        ttk.Label(header, text="Avatar Path IA", style="Header.TLabel").grid(row=0, column=0, sticky="w")
+        ttk.Label(header, text="Avatar Path IA", style="Header.TLabel").grid(
+            row=0, column=0, sticky="w"
+        )
         ttk.Label(
             header,
-            text="Busca heurística no mapa e alocação ótima das equipes por etapa",
+            text="Busca heuristica no mapa  |  Alocacao otima das equipes por etapa",
             style="Subheader.TLabel",
-        ).grid(row=1, column=0, sticky="w", pady=(4, 0))
+        ).grid(row=1, column=0, sticky="w", pady=(2, 0))
 
-        map_card = ttk.Frame(root, style="Card.TFrame", padding=14)
-        map_card.grid(row=1, column=0, sticky="nsew", padx=(0, 14))
+        map_card = ttk.Frame(root, style="Card.TFrame", padding=12)
+        map_card.grid(row=1, column=0, sticky="nsew", padx=(0, 10))
         map_card.columnconfigure(0, weight=1)
         map_card.rowconfigure(1, weight=1)
 
-        ttk.Label(map_card, text="Mapa da Jornada", style="Subheader.TLabel").grid(row=0, column=0, sticky="w")
+        ttk.Label(map_card, text="Mapa da Jornada", style="MapTitle.TLabel").grid(
+            row=0, column=0, sticky="w"
+        )
 
         canvas_frame = ttk.Frame(map_card, style="Card.TFrame")
-        canvas_frame.grid(row=1, column=0, sticky="nsew", pady=(10, 0))
+        canvas_frame.grid(row=1, column=0, sticky="nsew", pady=(8, 0))
         canvas_frame.columnconfigure(0, weight=1)
         canvas_frame.rowconfigure(0, weight=1)
 
         self.canvas = tk.Canvas(
             canvas_frame,
-            bg="#f8f3e8",
+            bg="#1a1a2a",
             highlightthickness=0,
             width=1020,
             height=650,
@@ -133,31 +250,40 @@ class JourneyGUI(tk.Tk):
         x_scroll.grid(row=1, column=0, sticky="ew")
         self.canvas.configure(xscrollcommand=x_scroll.set, yscrollcommand=y_scroll.set)
 
+        legend = ttk.Frame(map_card, style="Card.TFrame")
+        legend.grid(row=2, column=0, sticky="ew", pady=(10, 0))
+        col = 0
+        for symbol in (".", "R", "V", "A", "M"):
+            self._add_legend_item(legend, col, TERRAIN_LABELS[symbol], TERRAIN_COLORS[symbol])
+            col += 1
+        self._add_legend_item(legend, col, "Checkpoint", CHECKPOINT_COLOR)
+        legend.columnconfigure(col * 2 + 2, weight=1)
+
         side_panel = ttk.Frame(root, style="App.TFrame")
         side_panel.grid(row=1, column=1, sticky="nsew")
         side_panel.columnconfigure(0, weight=1)
         side_panel.rowconfigure(2, weight=1)
 
-        controls = ttk.LabelFrame(side_panel, text="Controles", style="Panel.TLabelframe", padding=12)
+        controls = ttk.LabelFrame(side_panel, text="Controles", style="Panel.TLabelframe", padding=10)
         controls.grid(row=0, column=0, sticky="ew")
         controls.columnconfigure(0, weight=1)
         controls.columnconfigure(1, weight=1)
 
         ttk.Button(controls, text="Reproduzir", command=self._play, style="Accent.TButton").grid(
-            row=0, column=0, sticky="ew", padx=(0, 6), pady=(0, 8)
+            row=0, column=0, sticky="ew", padx=(0, 4), pady=(0, 6)
         )
-        ttk.Button(controls, text="Pausar", command=self._pause).grid(
-            row=0, column=1, sticky="ew", padx=(6, 0), pady=(0, 8)
+        ttk.Button(controls, text="Pausar", command=self._pause, style="Secondary.TButton").grid(
+            row=0, column=1, sticky="ew", padx=(4, 0), pady=(0, 6)
         )
-        ttk.Button(controls, text="Avancar", command=self._step_once).grid(
-            row=1, column=0, sticky="ew", padx=(0, 6)
+        ttk.Button(controls, text="Avancar", command=self._step_once, style="Secondary.TButton").grid(
+            row=1, column=0, sticky="ew", padx=(0, 4)
         )
-        ttk.Button(controls, text="Reiniciar", command=self._reset).grid(
-            row=1, column=1, sticky="ew", padx=(6, 0)
+        ttk.Button(controls, text="Reiniciar", command=self._reset, style="Secondary.TButton").grid(
+            row=1, column=1, sticky="ew", padx=(4, 0)
         )
 
-        ttk.Label(controls, text="Velocidade da animação (ms)", style="Body.TLabel").grid(
-            row=2, column=0, columnspan=2, sticky="w", pady=(12, 6)
+        ttk.Label(controls, text="Velocidade (ms)", style="Body.TLabel").grid(
+            row=2, column=0, columnspan=2, sticky="w", pady=(10, 4)
         )
         ttk.Scale(
             controls,
@@ -167,30 +293,34 @@ class JourneyGUI(tk.Tk):
             variable=self.speed_var,
         ).grid(row=3, column=0, columnspan=2, sticky="ew")
 
-        summary = ttk.LabelFrame(side_panel, text="Estado Atual", style="Panel.TLabelframe", padding=12)
-        summary.grid(row=1, column=0, sticky="ew", pady=(12, 12))
+        summary = ttk.LabelFrame(side_panel, text="Estado Atual", style="Panel.TLabelframe", padding=10)
+        summary.grid(row=1, column=0, sticky="ew", pady=(10, 10))
+        summary.columnconfigure(1, weight=1)
 
-        info_rows = [
-            ("Status", self.status_var),
-            ("Posicao", self.position_var),
-            ("Progresso", self.progress_var),
-            ("Trecho", self.segment_var),
-            ("Equipe", self.team_var),
-            ("Movimento", self.movement_var),
-            ("Etapas", self.stage_var),
-            ("Total", self.total_var),
-            ("Nos expandidos", self.nodes_var),
-            ("Energia", self.energy_var),
-        ]
-        for row_index, (label, variable) in enumerate(info_rows):
-            ttk.Label(summary, text=f"{label}:", style="Body.TLabel").grid(
-                row=row_index, column=0, sticky="nw", padx=(0, 8), pady=2
-            )
-            ttk.Label(summary, textvariable=variable, style="Body.TLabel", wraplength=360, justify="left").grid(
-                row=row_index, column=1, sticky="w", pady=2
-            )
+        row_idx = 0
+        row_idx = self._add_info_row(summary, row_idx, "Status", self.status_var)
+        row_idx = self._add_info_row(summary, row_idx, "Posicao", self.position_var)
+        row_idx = self._add_info_row(summary, row_idx, "Progresso", self.progress_var)
 
-        segments_frame = ttk.LabelFrame(side_panel, text="Trechos Planejados", style="Panel.TLabelframe", padding=10)
+        self._add_section_separator(summary, row_idx, "Custo A* (pathfinding)")
+        row_idx += 1
+        row_idx = self._add_info_row(summary, row_idx, "Custo A*", self.movement_var)
+        row_idx = self._add_info_row(summary, row_idx, "Nos expandidos", self.nodes_var)
+
+        self._add_section_separator(summary, row_idx, "Custo Combinatorio (equipes)")
+        row_idx += 1
+        row_idx = self._add_info_row(summary, row_idx, "Trecho", self.segment_var)
+        row_idx = self._add_info_row(summary, row_idx, "Equipe", self.team_var)
+        row_idx = self._add_info_row(summary, row_idx, "Custo comb.", self.stage_var)
+        row_idx = self._add_info_row(summary, row_idx, "Energia", self.energy_var)
+
+        self._add_section_separator(summary, row_idx, "Total (A* + Combinatorio)")
+        row_idx += 1
+        row_idx = self._add_info_row(summary, row_idx, "Custo total", self.total_var)
+
+        segments_frame = ttk.LabelFrame(
+            side_panel, text="Trechos Planejados", style="Panel.TLabelframe", padding=8
+        )
         segments_frame.grid(row=2, column=0, sticky="nsew")
         segments_frame.columnconfigure(0, weight=1)
         segments_frame.rowconfigure(0, weight=1)
@@ -203,8 +333,8 @@ class JourneyGUI(tk.Tk):
         )
         self.segment_tree.grid(row=0, column=0, sticky="nsew")
         self.segment_tree.heading("trecho", text="Trecho")
-        self.segment_tree.heading("movimento", text="Mov.")
-        self.segment_tree.heading("etapa", text="Etapa")
+        self.segment_tree.heading("movimento", text="A*")
+        self.segment_tree.heading("etapa", text="Comb.")
         self.segment_tree.heading("equipe", text="Equipe")
         self.segment_tree.column("trecho", width=78, anchor="center")
         self.segment_tree.column("movimento", width=60, anchor="center")
@@ -216,21 +346,28 @@ class JourneyGUI(tk.Tk):
         tree_scroll.grid(row=0, column=1, sticky="ns")
         self.segment_tree.configure(yscrollcommand=tree_scroll.set)
 
-        legend = ttk.Frame(map_card, style="Card.TFrame")
-        legend.grid(row=2, column=0, sticky="ew", pady=(12, 0))
-        legend.columnconfigure(6, weight=1)
-        self._add_legend_item(legend, 0, "Plano", TERRAIN_COLORS["."])
-        self._add_legend_item(legend, 1, "Rochoso", TERRAIN_COLORS["R"])
-        self._add_legend_item(legend, 2, "Floresta", TERRAIN_COLORS["F"])
-        self._add_legend_item(legend, 3, "Agua", TERRAIN_COLORS["A"])
-        self._add_legend_item(legend, 4, "Montanha", TERRAIN_COLORS["M"])
-        self._add_legend_item(legend, 5, "Checkpoint", CHECKPOINT_COLOR)
+    def _add_section_separator(self, parent: ttk.Frame, row: int, title: str) -> None:
+        sep_frame = ttk.Frame(parent, style="Card.TFrame")
+        sep_frame.grid(row=row, column=0, columnspan=2, sticky="ew", pady=(8, 4))
+        ttk.Label(sep_frame, text=title, style="SectionTitle.TLabel").pack(anchor="w")
+        tk.Frame(sep_frame, height=1, bg=SEPARATOR_COLOR).pack(fill="x", pady=(2, 0))
+
+    def _add_info_row(self, parent: ttk.Frame, row: int, label: str, variable: tk.StringVar) -> int:
+        ttk.Label(parent, text=f"{label}:", style="Body.TLabel").grid(
+            row=row, column=0, sticky="nw", padx=(0, 8), pady=2
+        )
+        ttk.Label(parent, textvariable=variable, style="Value.TLabel", wraplength=340, justify="left").grid(
+            row=row, column=1, sticky="w", pady=2
+        )
+        return row + 1
 
     def _add_legend_item(self, parent: ttk.Frame, column: int, label: str, color: str) -> None:
-        swatch = tk.Canvas(parent, width=18, height=18, bg=PARCHMENT_DARK, highlightthickness=0)
-        swatch.grid(row=0, column=column * 2, padx=(0, 4))
-        swatch.create_rectangle(1, 1, 17, 17, fill=color, outline=color)
-        ttk.Label(parent, text=label, style="Body.TLabel").grid(row=0, column=column * 2 + 1, padx=(0, 12))
+        swatch = tk.Canvas(parent, width=22, height=16, bg=BG_CARD, highlightthickness=0)
+        swatch.grid(row=0, column=column * 2, padx=(0, 3))
+        swatch.create_rectangle(2, 2, 20, 14, fill=color, outline=color, width=0)
+        ttk.Label(parent, text=label, style="Legend.TLabel").grid(
+            row=0, column=column * 2 + 1, padx=(0, 14)
+        )
 
     def _draw_map(self) -> None:
         map_data = self.result.map_data
@@ -238,11 +375,16 @@ class JourneyGUI(tk.Tk):
         height = map_data.height * self.cell_size + self.padding * 2
         self.canvas.configure(scrollregion=(0, 0, width, height))
 
-        self.canvas.create_rectangle(0, 0, width, height, fill="#f8f3e8", outline="")
+        self.canvas.create_rectangle(0, 0, width, height, fill="#1a1a2a", outline="")
         self.base_map_photo = tk.PhotoImage(width=map_data.width, height=map_data.height)
 
+        terrain_colors = TERRAIN_COLORS.copy()
+        for symbol in self.result.config.checkpoint_order:
+            if symbol not in terrain_colors:
+                terrain_colors[symbol] = CHECKPOINT_COLOR
+
         for row, line in enumerate(map_data.grid):
-            row_colors = "{" + " ".join(TERRAIN_COLORS.get(symbol, PARCHMENT) for symbol in line) + "}"
+            row_colors = "{" + " ".join(terrain_colors.get(symbol, BG_CARD) for symbol in line) + "}"
             self.base_map_photo.put(row_colors, to=(0, row))
 
         self.scaled_map_photo = self.base_map_photo.zoom(self.cell_size, self.cell_size)
@@ -262,7 +404,7 @@ class JourneyGUI(tk.Tk):
                 x2 - inset,
                 y2 - inset,
                 fill=CHECKPOINT_COLOR,
-                outline="#7f2517",
+                outline="#a03020",
                 width=1,
             )
             self.canvas.create_text(
@@ -270,7 +412,7 @@ class JourneyGUI(tk.Tk):
                 (y1 + y2) / 2,
                 text=checkpoint,
                 fill="white",
-                font=("Helvetica", 7, "bold"),
+                font=("Segoe UI", 7, "bold"),
             )
 
         start_coord = self.frames[0].coordinate
@@ -285,7 +427,7 @@ class JourneyGUI(tk.Tk):
             capstyle=tk.ROUND,
             joinstyle=tk.ROUND,
         )
-        self.current_marker = self.canvas.create_oval(0, 0, 0, 0, fill=MARKER_COLOR, outline=INK, width=2)
+        self.current_marker = self.canvas.create_oval(0, 0, 0, 0, fill=MARKER_COLOR, outline="white", width=2)
 
     def _coord_bounds(self, coord: Coordinate) -> tuple[float, float, float, float]:
         row, col = coord
@@ -357,7 +499,9 @@ class JourneyGUI(tk.Tk):
         self.canvas.tag_raise(self.current_marker)
 
         self.position_var.set(f"linha {frame.coordinate[0]}, coluna {frame.coordinate[1]}")
-        self.progress_var.set(f"frame {frame_index + 1}/{len(self.frames)} | passo {frame.segment_step_index}/{frame.segment_steps}")
+        self.progress_var.set(
+            f"frame {frame_index + 1}/{len(self.frames)}  |  passo {frame.segment_step_index}/{frame.segment_steps}"
+        )
         self.movement_var.set(str(frame.movement_cost))
         self.stage_var.set(f"{frame.stage_cost:.4f}")
         self.total_var.set(f"{frame.total_cost:.4f}")
@@ -385,8 +529,8 @@ class JourneyGUI(tk.Tk):
 
         team = ", ".join(segment.stage_assignment.characters)
         if frame.stage_applied:
-            return f"{team} | etapa concluida"
-        return f"{team} | em deslocamento"
+            return f"{team}  |  etapa concluida"
+        return f"{team}  |  em deslocamento"
 
     def _energy_text(self) -> str:
         parts = []
