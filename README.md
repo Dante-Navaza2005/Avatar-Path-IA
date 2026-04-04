@@ -64,28 +64,13 @@ Tudo que o enunciado pede como configurável está em `config/default_config.jso
 - agilidade e energia máxima dos personagens;
 - parâmetros da visualização.
 
-## Assunções necessárias
+## Resultado
 
-O PDF tem uma inconsistência entre `0`, `1` e `Z` ao falar de início, fim e dificuldade. Para manter o problema coerente com o mapa e com o total de `30` etapas cronometradas, a implementação adota:
+Com o mapa `Instrucoes/MAPA_LENDA-AANG.txt`:
 
-- `0` como início da jornada, sem custo de etapa;
-- `Z` como fim da jornada, sem custo de etapa;
-- as etapas com dificuldade são `1..Y`.
-
-Também foi adotado:
-
-- custo `1` para entrar em uma célula de checkpoint;
-- bloqueio de checkpoints futuros durante cada busca `A*`, para garantir que a ordem das etapas seja respeitada.
-
-Ambas as escolhas podem ser alteradas no arquivo de configuração.
-
-## Resultado padrão
-
-Com o mapa `Instrucoes/MAPA_LENDA-AANG.txt` e a configuração padrão:
-
-- custo total de movimento: `2807`
-- custo total das etapas: `1638.1436`
-- custo total final: `4445.1436`
+- custo total do A*: `1806`
+- custo total da combinatória: `1805.5486`
+- custo total final: `3611.5486`
 
 ## Testes
 
