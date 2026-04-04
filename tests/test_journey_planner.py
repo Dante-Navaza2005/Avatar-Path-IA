@@ -2,12 +2,42 @@ import unittest
 
 from avatar_path.config import load_config
 from avatar_path.map_loader import load_map
-from avatar_path.planner import JourneyPlanner, compare_search_algorithms
+from avatar_path.pathfinding import find_path
+from avatar_path.planner import JourneyPlanner, compare_search_algorithms, optimize_checkpoint_order
 from avatar_path.team_planner import TeamPlanner
 from avatar_path.visualization import build_animation_frames
 
 
 class JourneyPlannerTests(unittest.TestCase):
+    def test_optimize_checkpoint_order_keeps_endpoints_and_reduces_movement(self):
+        config = load_config("config/default_config.json")
+        map_data = load_map(config)
+
+        optimized_order = optimize_checkpoint_order(map_data, config.checkpoint_order, "astar")
+
+        self.assertEqual(optimized_order[0], config.checkpoint_order[0])
+        self.assertEqual(optimized_order[-1], config.checkpoint_order[-1])
+        self.assertEqual(len(set(optimized_order)), len(config.checkpoint_order))
+
+        def movement_cost(order: tuple[str, ...]) -> int:
+            total = 0
+            for idx in range(len(order) - 1):
+                blocked = frozenset(
+                    map_data.checkpoints[symbol]
+                    for symbol in order[idx + 2 :]
+                )
+                _, segment_cost, _ = find_path(
+                    map_data,
+                    map_data.checkpoints[order[idx]],
+                    map_data.checkpoints[order[idx + 1]],
+                    "astar",
+                    blocked,
+                )
+                total += segment_cost
+            return total
+
+        self.assertLess(movement_cost(optimized_order), movement_cost(config.checkpoint_order))
+
     def test_map_matches_expected_dimensions_and_checkpoints(self):
         config = load_config("config/default_config.json")
         map_data = load_map(config)
@@ -32,9 +62,9 @@ class JourneyPlannerTests(unittest.TestCase):
         result = JourneyPlanner(config).solve()
 
         self.assertEqual(len(result.segments), 31)
-        self.assertEqual(result.movement_cost, 2807)
+        self.assertEqual(result.movement_cost, 1815)
         self.assertEqual(round(result.stage_cost, 4), 1638.1436)
-        self.assertEqual(round(result.total_cost, 4), 4445.1436)
+        self.assertEqual(round(result.total_cost, 4), 3453.1436)
 
     def test_animation_frames_cover_start_and_finish(self):
         config = load_config("config/default_config.json")

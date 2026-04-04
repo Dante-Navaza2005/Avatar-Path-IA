@@ -12,15 +12,16 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Planeja a jornada do Avatar usando A* no mapa do trabalho."
     )
+    parser.set_defaults(optimize_order=True)
     parser.add_argument(
         "--config",
         default="config/default_config.json",
-        help="Caminho para o arquivo JSON de configuração.",
+        help="Caminho para o arquivo JSON de configuracao.",
     )
     parser.add_argument(
         "--animate",
         action="store_true",
-        help="Exibe uma animação simples dos movimentos no terminal.",
+        help="Exibe uma animacao simples dos movimentos no terminal.",
     )
     parser.add_argument(
         "--gui",
@@ -30,13 +31,25 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--search",
         choices=("auto", "astar", "dijkstra", "greedy"),
-        default="auto",
+        default="astar",
         help="Algoritmo de busca para os trajetos entre checkpoints.",
     )
     parser.add_argument(
         "--compare-search",
         action="store_true",
         help="Compara A*, Dijkstra e Greedy no mapa atual antes de executar.",
+    )
+    parser.add_argument(
+        "--optimize-order",
+        dest="optimize_order",
+        action="store_true",
+        help="Ativa a reordenacao experimental dos checkpoints.",
+    )
+    parser.add_argument(
+        "--no-optimize-order",
+        dest="optimize_order",
+        action="store_false",
+        help="Mantem a ordem fixa dos checkpoints do enunciado.",
     )
     return parser
 
@@ -107,7 +120,11 @@ def main() -> None:
     if args.compare_search:
         print_search_comparison(comparison)
 
-    result = JourneyPlanner(config, search_algorithm=selected_algorithm).solve()
+    result = JourneyPlanner(
+        config,
+        search_algorithm=selected_algorithm,
+        optimize_order=args.optimize_order,
+    ).solve()
 
     if args.gui:
         from avatar_path.gui import launch_gui
