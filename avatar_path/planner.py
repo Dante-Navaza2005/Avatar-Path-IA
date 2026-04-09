@@ -232,7 +232,7 @@ class JourneyPlanner:
 
         team_planner = TeamPlanner(
             characters=effective_config.characters,
-            ordered_stage_symbols=effective_config.checkpoint_order[1:],
+            ordered_stage_symbols=effective_config.checkpoint_order[1:-1],
             stage_difficulties=effective_config.stage_difficulties,
         )
         assignments, energy_usage, stage_cost = team_planner.optimize()
@@ -301,7 +301,7 @@ def compare_search_algorithms(
 ) -> tuple[dict[str, float | int | str], ...]:
     team_planner = TeamPlanner(
         characters=config.characters,
-        ordered_stage_symbols=config.checkpoint_order[1:],
+        ordered_stage_symbols=config.checkpoint_order[1:-1],
         stage_difficulties=config.stage_difficulties,
     )
     _, _, stage_cost = team_planner.optimize()
