@@ -12,7 +12,6 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Planeja a jornada do Avatar usando A* no mapa do trabalho."
     )
-    parser.set_defaults(optimize_order=True)
     parser.add_argument(
         "--config",
         default="config/default_config.json",
@@ -38,18 +37,6 @@ def build_argument_parser() -> argparse.ArgumentParser:
         "--compare-search",
         action="store_true",
         help="Compara A*, Dijkstra e Greedy no mapa atual antes de executar.",
-    )
-    parser.add_argument(
-        "--optimize-order",
-        dest="optimize_order",
-        action="store_true",
-        help="Ativa a reordenacao experimental dos checkpoints.",
-    )
-    parser.add_argument(
-        "--no-optimize-order",
-        dest="optimize_order",
-        action="store_false",
-        help="Mantem a ordem fixa dos checkpoints do enunciado.",
     )
     return parser
 
@@ -123,7 +110,6 @@ def main() -> None:
     result = JourneyPlanner(
         config,
         search_algorithm=selected_algorithm,
-        optimize_order=args.optimize_order,
     ).solve()
 
     if args.gui:
