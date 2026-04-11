@@ -10,6 +10,8 @@ def load_config(path: str | Path) -> JourneyConfig:
     config_path = Path(path)
     payload = json.loads(config_path.read_text(encoding="utf-8"))
 
+    # A configuracao nasce no JSON, mas o restante do projeto trabalha com
+    # dataclasses imutaveis para facilitar leitura e depuracao.
     characters = tuple(
         CharacterConfig(
             name=name,

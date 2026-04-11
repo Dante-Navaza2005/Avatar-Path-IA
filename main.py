@@ -4,6 +4,7 @@ import argparse
 
 from avatar_path.config import load_config
 from avatar_path.domain import JourneyResult
+from avatar_path.formatting import format_cost
 from avatar_path.planner import JourneyPlanner, compare_search_algorithms
 from avatar_path.visualization import animate_journey
 
@@ -46,10 +47,10 @@ def print_search_comparison(comparison: tuple[dict[str, float | int | str], ...]
     for item in comparison:
         print(
             f"- {item['algorithm']}: "
-            f"movimento={item['movement_cost']}, "
-            f"total={item['total_cost']:.4f}, "
+            f"movimento={format_cost(item['movement_cost'])}, "
+            f"total={format_cost(item['total_cost'])}, "
             f"nos={item['nodes_expanded']}, "
-            f"tempo={item['elapsed_ms']:.2f}ms"
+            f"tempo={format_cost(item['elapsed_ms'])}ms"
         )
     print()
 
@@ -63,9 +64,9 @@ def print_summary(result: JourneyResult, algorithm: str) -> None:
     print("Resumo da jornada")
     print(f"Algoritmo de busca usado: {algorithm}")
     print(f"Trechos planejados: {len(result.segments)}")
-    print(f"Custo total de movimento: {result.movement_cost}")
-    print(f"Custo total das etapas: {result.stage_cost:.4f}")
-    print(f"Custo total final: {result.total_cost:.4f}")
+    print(f"Custo total de movimento: {format_cost(result.movement_cost)}")
+    print(f"Custo total das etapas: {format_cost(result.stage_cost)}")
+    print(f"Custo total final: {format_cost(result.total_cost)}")
     print()
     print("Uso de energia")
     for name, usages in result.energy_usage.items():
@@ -77,18 +78,18 @@ def print_summary(result: JourneyResult, algorithm: str) -> None:
         if assignment is None:
             print(
                 f"- {segment.start_symbol} -> {segment.end_symbol}: "
-                f"passos={segment.steps}, movimento={segment.movement_cost}, "
-                f"custo acumulado={segment.cumulative_total_cost:.4f}"
+                f"passos={segment.steps}, movimento={format_cost(segment.movement_cost)}, "
+                f"custo acumulado={format_cost(segment.cumulative_total_cost)}"
             )
             continue
 
         team = ", ".join(assignment.characters)
         print(
             f"- {segment.start_symbol} -> {segment.end_symbol}: "
-            f"passos={segment.steps}, movimento={segment.movement_cost}, "
+            f"passos={segment.steps}, movimento={format_cost(segment.movement_cost)}, "
             f"etapa={assignment.stage_symbol}, equipe=[{team}], "
-            f"tempo da etapa={assignment.time_cost:.4f}, "
-            f"custo acumulado={segment.cumulative_total_cost:.4f}"
+            f"tempo da etapa={format_cost(assignment.time_cost)}, "
+            f"custo acumulado={format_cost(segment.cumulative_total_cost)}"
         )
 
 

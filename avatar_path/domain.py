@@ -125,3 +125,4 @@ class AnimationFrame:
     stage_cost: float
     total_cost: float
     stage_applied: bool
+    energy_usage: dict[str, int]

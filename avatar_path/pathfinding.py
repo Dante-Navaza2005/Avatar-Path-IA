@@ -5,6 +5,9 @@ from heapq import heappop, heappush
 from avatar_path.domain import Coordinate, MapData
 
 
+NEIGHBOR_DELTAS = ((-1, 0), (1, 0), (0, -1), (0, 1))
+
+
 def manhattan_distance(a: Coordinate, b: Coordinate) -> int:
     return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
@@ -48,6 +51,8 @@ def _best_first_search(
     total_cells = len(cell_costs)
     start_index = map_data.index(start)
     goal_index = map_data.index(goal)
+    # Guardamos checkpoints bloqueados e nos fechados em bitmaps por linha
+    # para reduzir custo de memoria e deixar as checagens O(1).
     blocked_rows = map_data.bitmap_for_coordinates(blocked)
     use_closed_bitmap = priority_mode != "greedy"
 
@@ -75,85 +80,36 @@ def _best_first_search(
         if current_index == goal_index:
             return reconstruct_path(came_from, current_index, width), current_cost, expanded_nodes
 
-        if current_row > 0:
-            neighbor_row = current_row - 1
-            neighbor_col = current_col
-            neighbor_index = current_index - width
-            if not (neighbor_index != goal_index and blocked_rows[neighbor_row] & current_bit):
-                tentative_cost = current_cost + cell_costs[neighbor_index]
-                known_cost = best_cost[neighbor_index]
-                if known_cost == -1 or tentative_cost < known_cost:
-                    best_cost[neighbor_index] = tentative_cost
-                    came_from[neighbor_index] = current_index
-                    heuristic = (abs(neighbor_row - goal_row) + abs(neighbor_col - goal_col)) * minimum_step_cost
-                    if priority_mode == "astar":
-                        priority = tentative_cost + heuristic
-                    elif priority_mode == "dijkstra":
-                        priority = tentative_cost
-                    else:
-                        priority = heuristic
-                    heappush(frontier, (priority, tentative_cost, neighbor_index))
+        for row_delta, col_delta in NEIGHBOR_DELTAS:
+            neighbor_row = current_row + row_delta
+            neighbor_col = current_col + col_delta
+            if not (0 <= neighbor_row < height and 0 <= neighbor_col < width):
+                continue
 
-        if current_row + 1 < height:
-            neighbor_row = current_row + 1
-            neighbor_col = current_col
-            neighbor_index = current_index + width
-            if not (neighbor_index != goal_index and blocked_rows[neighbor_row] & current_bit):
-                tentative_cost = current_cost + cell_costs[neighbor_index]
-                known_cost = best_cost[neighbor_index]
-                if known_cost == -1 or tentative_cost < known_cost:
-                    best_cost[neighbor_index] = tentative_cost
-                    came_from[neighbor_index] = current_index
-                    heuristic = (abs(neighbor_row - goal_row) + abs(neighbor_col - goal_col)) * minimum_step_cost
-                    if priority_mode == "astar":
-                        priority = tentative_cost + heuristic
-                    elif priority_mode == "dijkstra":
-                        priority = tentative_cost
-                    else:
-                        priority = heuristic
-                    heappush(frontier, (priority, tentative_cost, neighbor_index))
-
-        if current_col > 0:
-            neighbor_row = current_row
-            neighbor_col = current_col - 1
+            neighbor_index = current_index + row_delta * width + col_delta
             neighbor_bit = 1 << neighbor_col
-            neighbor_index = current_index - 1
-            if not (neighbor_index != goal_index and blocked_rows[neighbor_row] & neighbor_bit):
-                tentative_cost = current_cost + cell_costs[neighbor_index]
-                known_cost = best_cost[neighbor_index]
-                if known_cost == -1 or tentative_cost < known_cost:
-                    best_cost[neighbor_index] = tentative_cost
-                    came_from[neighbor_index] = current_index
-                    heuristic = (abs(neighbor_row - goal_row) + abs(neighbor_col - goal_col)) * minimum_step_cost
-                    if priority_mode == "astar":
-                        priority = tentative_cost + heuristic
-                    elif priority_mode == "dijkstra":
-                        priority = tentative_cost
-                    else:
-                        priority = heuristic
-                    heappush(frontier, (priority, tentative_cost, neighbor_index))
+            if neighbor_index != goal_index and blocked_rows[neighbor_row] & neighbor_bit:
+                continue
 
-        if current_col + 1 < width:
-            neighbor_row = current_row
-            neighbor_col = current_col + 1
-            neighbor_bit = 1 << neighbor_col
-            neighbor_index = current_index + 1
-            if not (neighbor_index != goal_index and blocked_rows[neighbor_row] & neighbor_bit):
-                tentative_cost = current_cost + cell_costs[neighbor_index]
-                known_cost = best_cost[neighbor_index]
-                if known_cost == -1 or tentative_cost < known_cost:
-                    best_cost[neighbor_index] = tentative_cost
-                    came_from[neighbor_index] = current_index
-                    heuristic = (abs(neighbor_row - goal_row) + abs(neighbor_col - goal_col)) * minimum_step_cost
-                    if priority_mode == "astar":
-                        priority = tentative_cost + heuristic
-                    elif priority_mode == "dijkstra":
-                        priority = tentative_cost
-                    else:
-                        priority = heuristic
-                    heappush(frontier, (priority, tentative_cost, neighbor_index))
+            tentative_cost = current_cost + cell_costs[neighbor_index]
+            known_cost = best_cost[neighbor_index]
+            if known_cost != -1 and tentative_cost >= known_cost:
+                continue
 
-    raise ValueError(f"Não existe caminho entre {start} e {goal}.")
+            best_cost[neighbor_index] = tentative_cost
+            came_from[neighbor_index] = current_index
+            # O mesmo loop atende A*, Dijkstra e Greedy; o que muda e so
+            # a prioridade usada na fila.
+            heuristic = (abs(neighbor_row - goal_row) + abs(neighbor_col - goal_col)) * minimum_step_cost
+            if priority_mode == "astar":
+                priority = tentative_cost + heuristic
+            elif priority_mode == "dijkstra":
+                priority = tentative_cost
+            else:
+                priority = heuristic
+            heappush(frontier, (priority, tentative_cost, neighbor_index))
+
+    raise ValueError(f"Nao existe caminho entre {start} e {goal}.")
 
 
 def astar_shortest_path(

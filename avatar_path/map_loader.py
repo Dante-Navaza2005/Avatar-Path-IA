@@ -7,13 +7,13 @@ def load_map(config: JourneyConfig) -> MapData:
     lines = config.map_path.read_text(encoding="utf-8").splitlines()
     if len(lines) != config.expected_height:
         raise ValueError(
-            f"Mapa inválido: esperado {config.expected_height} linhas, recebido {len(lines)}."
+            f"Mapa invalido: esperado {config.expected_height} linhas, recebido {len(lines)}."
         )
 
     widths = {len(line) for line in lines}
     if widths != {config.expected_width}:
         raise ValueError(
-            f"Mapa inválido: esperado {config.expected_width} colunas por linha, recebido {sorted(widths)}."
+            f"Mapa invalido: esperado {config.expected_width} colunas por linha, recebido {sorted(widths)}."
         )
 
     checkpoints: dict[str, tuple[int, int]] = {}
@@ -23,7 +23,7 @@ def load_map(config: JourneyConfig) -> MapData:
     for row, line in enumerate(lines):
         for col, symbol in enumerate(line):
             if symbol not in valid_symbols:
-                raise ValueError(f"Símbolo desconhecido no mapa: {symbol!r} em ({row}, {col}).")
+                raise ValueError(f"Simbolo desconhecido no mapa: {symbol!r} em ({row}, {col}).")
             cell_costs.append(config.terrain_costs.get(symbol, config.checkpoint_cost))
             if symbol in config.checkpoint_order:
                 if symbol in checkpoints:
