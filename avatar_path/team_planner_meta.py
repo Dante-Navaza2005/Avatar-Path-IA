@@ -6,59 +6,77 @@ from random import Random
 from avatar_path.team_planner_state import PlannerSolution, TeamPlannerState
 
 
-SEEDS = (1771, 1949, 2213, 2591)
-RESTARTS = 12
-ITERATIONS_PER_RESTART = 12000
+SEEDS = (1771, 1949, 2213, 2591, 3001, 3253)
+RESTARTS = 14
+ITERATIONS_PER_RESTART = 14000
 INITIAL_TEMPERATURE = 45.0
 COOLING_RATE = 0.999
-PERTURBATION_STEPS = 40
+NEIGHBOR_BATCH_SIZE = 5
+BEST_BATCH_SELECTION_PROBABILITY = 0.75
+RANDOMIZED_GREEDY_ALPHA_MIN = 0.15
+RANDOMIZED_GREEDY_ALPHA_MAX = 0.40
+RANDOMIZED_GREEDY_TOP_CHOICES = 3
+RANDOMIZED_GREEDY_STAGE_NOISE = 25.0
 
 
 def optimize_with_hill_climbing_simulated_annealing(
     state: TeamPlannerState,
 ) -> PlannerSolution:
-    # Comecamos com um guloso forte para reduzir o espaco de busca e,
-    # a partir dele, aplicamos annealing com varios reinicios.
+    # Seguindo a ideia discutida nas aulas de busca local, usamos:
+    # 1) uma boa solucao inicial gulosa;
+    # 2) varios reinicios com solucao inicial diversificada;
+    # 3) simulated annealing para escapar de otimos locais;
+    # 4) hill climbing no fim para polir o melhor candidato.
     greedy_assignments, _, greedy_cost = optimize_with_greedy_balancing(state)
     greedy_masks = state.masks_from_assignments(greedy_assignments)
     greedy_usage = state.usage_for_masks(greedy_masks)
-    best_masks, _, best_cost = hill_climb_polish(
+    greedy_masks, greedy_usage, greedy_cost = hill_climb_polish(
         state,
         greedy_masks,
         greedy_usage,
         greedy_cost,
     )
 
+    best_masks = greedy_masks
+    best_usage = greedy_usage
+    best_cost = greedy_cost
+
     for seed in SEEDS:
         rng = Random(seed)
         for restart_idx in range(RESTARTS):
-            current_masks = greedy_masks
-            current_usage = greedy_usage
-            current_cost = greedy_cost
-
-            if restart_idx > 0:
-                for _ in range(PERTURBATION_STEPS + restart_idx * 4):
-                    neighbor = sample_neighbor(state, current_masks, current_usage, current_cost, rng)
-                    if neighbor is None:
-                        break
-                    current_masks, current_usage, current_cost = neighbor
+            if restart_idx == 0:
+                # O primeiro reinicio de cada semente reaproveita a melhor
+                # solucao global conhecida ate ali, em vez de sempre voltar
+                # para o mesmo guloso deterministico.
+                current_masks = best_masks
+                current_usage = best_usage
+                current_cost = best_cost
+            else:
+                current_masks, current_usage, current_cost = build_randomized_start(state, rng)
 
             temperature = INITIAL_TEMPERATURE
             for _ in range(ITERATIONS_PER_RESTART):
-                neighbor = sample_neighbor(state, current_masks, current_usage, current_cost, rng)
+                neighbor = sample_neighbor_batch(
+                    state,
+                    current_masks,
+                    current_usage,
+                    current_cost,
+                    rng,
+                )
                 if neighbor is None:
                     break
 
                 next_masks, next_usage, next_cost = neighbor
                 delta = next_cost - current_cost
-                # O simulated annealing aceita, ocasionalmente, solucoes piores
-                # para escapar de otimos locais e voltar a melhorar depois.
+                # O criterio de Boltzmann permite aceitar piores vizinhos de vez
+                # em quando, reduzindo a chance de parar cedo em um maximo local.
                 if delta <= 0.0 or rng.random() < exp(-delta / temperature):
                     current_masks = next_masks
                     current_usage = next_usage
                     current_cost = next_cost
-                    if current_cost + 1e-12 < best_cost:
+                    if current_cost < best_cost:
                         best_masks = current_masks
+                        best_usage = current_usage
                         best_cost = current_cost
 
                 temperature *= COOLING_RATE
@@ -69,8 +87,9 @@ def optimize_with_hill_climbing_simulated_annealing(
                 current_usage,
                 current_cost,
             )
-            if current_cost + 1e-12 < best_cost:
+            if current_cost < best_cost:
                 best_masks = current_masks
+                best_usage = current_usage
                 best_cost = current_cost
 
     return state.build_assignments(dict(zip(state.stage_symbols, best_masks)))
@@ -107,10 +126,7 @@ def optimize_with_greedy_balancing(
         else:
             raise ValueError("Nao existe alocacao valida de personagens para todas as etapas.")
 
-    while True:
-        if total_assigned_uses >= state.usable_energy_budget:
-            break
-
+    while total_assigned_uses < state.usable_energy_budget:
         best_gain = 0.0
         best_stage_idx = -1
         best_char_idx = -1
@@ -144,6 +160,114 @@ def optimize_with_greedy_balancing(
         total_assigned_uses += 1
 
     return state.build_assignments(chosen_mask_by_symbol)
+
+
+def optimize_with_randomized_greedy_balancing(
+    state: TeamPlannerState,
+    rng: Random,
+    alpha: float,
+) -> PlannerSolution:
+    remaining_energy = list(state.max_energies)
+    chosen_mask_by_symbol = {symbol: 0 for symbol in state.stage_symbols}
+    chosen_agility_by_symbol = {symbol: 0 for symbol in state.stage_symbols}
+    total_assigned_uses = 0
+
+    # A aula destaca a importancia de partir de solucoes iniciais aleatorias.
+    # Aqui mantemos a intuicao gulosa, mas com diversidade controlada.
+    stage_order = list(state.stage_symbols)
+    stage_order.sort(
+        key=lambda symbol: state.stage_difficulties[symbol] + rng.random() * RANDOMIZED_GREEDY_STAGE_NOISE,
+        reverse=True,
+    )
+
+    for stage_symbol in stage_order:
+        candidates = [
+            idx
+            for idx in state.character_indices_by_agility
+            if remaining_energy[idx] > 0
+        ]
+        if not candidates:
+            raise ValueError("Nao existe alocacao valida de personagens para todas as etapas.")
+
+        top_count = max(1, min(len(candidates), RANDOMIZED_GREEDY_TOP_CHOICES))
+        char_idx = candidates[rng.randrange(top_count)]
+        chosen_mask_by_symbol[stage_symbol] |= 1 << char_idx
+        chosen_agility_by_symbol[stage_symbol] += state.agility_units[char_idx]
+        remaining_energy[char_idx] -= 1
+        total_assigned_uses += 1
+
+    while total_assigned_uses < state.usable_energy_budget:
+        best_gain = 0.0
+        candidates: list[tuple[float, str, int]] = []
+
+        for stage_symbol in state.stage_symbols:
+            current_agility = chosen_agility_by_symbol[stage_symbol]
+            current_mask = chosen_mask_by_symbol[stage_symbol]
+            difficulty = state.stage_difficulties[stage_symbol]
+
+            for char_idx in state.character_indices_by_agility:
+                if remaining_energy[char_idx] <= 0:
+                    continue
+                if current_mask & (1 << char_idx):
+                    continue
+
+                next_agility = current_agility + state.agility_units[char_idx]
+                gain = (difficulty * 10.0 / current_agility) - (difficulty * 10.0 / next_agility)
+                if gain > best_gain:
+                    best_gain = gain
+                candidates.append((gain, stage_symbol, char_idx))
+
+        if not candidates:
+            break
+
+        cutoff = best_gain * (1.0 - alpha)
+        restricted_candidates = [
+            candidate
+            for candidate in candidates
+            if candidate[0] >= cutoff - 1e-12
+        ]
+        gain, stage_symbol, char_idx = restricted_candidates[rng.randrange(len(restricted_candidates))]
+        chosen_mask_by_symbol[stage_symbol] |= 1 << char_idx
+        chosen_agility_by_symbol[stage_symbol] += state.agility_units[char_idx]
+        remaining_energy[char_idx] -= 1
+        total_assigned_uses += 1
+
+    return state.build_assignments(chosen_mask_by_symbol)
+
+
+def build_randomized_start(
+    state: TeamPlannerState,
+    rng: Random,
+) -> tuple[tuple[int, ...], tuple[int, ...], float]:
+    alpha = RANDOMIZED_GREEDY_ALPHA_MIN + (
+        (RANDOMIZED_GREEDY_ALPHA_MAX - RANDOMIZED_GREEDY_ALPHA_MIN) * rng.random()
+    )
+    assignments, _, cost = optimize_with_randomized_greedy_balancing(state, rng, alpha)
+    masks = state.masks_from_assignments(assignments)
+    usage = state.usage_for_masks(masks)
+    return hill_climb_polish(state, masks, usage, cost)
+
+
+def sample_neighbor_batch(
+    state: TeamPlannerState,
+    masks: tuple[int, ...],
+    usage: tuple[int, ...],
+    total_cost: float,
+    rng: Random,
+) -> tuple[tuple[int, ...], tuple[int, ...], float] | None:
+    candidates = []
+    for _ in range(NEIGHBOR_BATCH_SIZE):
+        neighbor = sample_neighbor(state, masks, usage, total_cost, rng)
+        if neighbor is not None:
+            candidates.append(neighbor)
+
+    if not candidates:
+        return None
+
+    candidates.sort(key=lambda item: item[2])
+    if rng.random() < BEST_BATCH_SELECTION_PROBABILITY:
+        return candidates[0]
+    return candidates[rng.randrange(len(candidates))]
 
 
 def sample_neighbor(

@@ -69,8 +69,8 @@ Tudo que o enunciado pede como configuravel esta em `config/default_config.json`
 Com o mapa `Instrucoes/MAPA_LENDA-AANG.txt`:
 
 - custo total do A*: `2798.000000`
-- custo total da combinatoria: `1806.003458`
-- custo total final: `4604.003458`
+- custo total da combinatoria: `1805.548602`
+- custo total final: `4603.548602`
 
 ## Testes
 
