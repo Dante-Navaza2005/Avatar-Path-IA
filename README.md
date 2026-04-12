@@ -1,15 +1,28 @@
 # Avatar Path IA
 
+## Video da apresentacao
+
+- Link do video: `inserir_link_aqui`
+
+## Integrantes
+
+- `Breno` - Matricula: `XXXXXXXXX`
+- `Dante` - Matricula: `XXXXXXXXX`
+- `Rafael Soares Estevão` - Matricula: `2320470`
+
 Implementacao do trabalho `INF1771_IA_Trabalho_1_2026.1.pdf` usando:
 
 - `A*` para encontrar o menor custo entre checkpoints consecutivos no mapa.
 - `Algoritmo Genetico + Hill Climbing + Simulated Annealing` para escolher a melhor combinacao de personagens em cada etapa, respeitando o limite de `8` usos por personagem.
-- visualizacao simples no terminal para acompanhar o deslocamento do agente.
+- `Interface grafica (GUI)` para acompanhar o deslocamento do agente no mapa.
 
 ## Estrutura
 
-- `main.py`: ponto de entrada da aplicacao.
-- `avatar_path/`: codigo-fonte principal.
+- `main.py`: ponto de entrada da aplicacao e configuracao dos modos de execucao.
+- `avatar_path/`: logica principal de planejamento, busca e carregamento do mapa.
+- `avatar_path/gui.py`: inicializacao da interface grafica.
+- `avatar_path/ui/`: componentes da GUI, incluindo tema, canvas do mapa e animacoes.
+- `avatar_path/visualization.py`: animacao simples no terminal.
 - `config/default_config.json`: mapa, custos de terreno, ordem das etapas, dificuldades e agilidade dos personagens.
 - `Instrucoes/`: PDF do enunciado e mapa fornecidos.
 
@@ -18,39 +31,43 @@ Implementacao do trabalho `INF1771_IA_Trabalho_1_2026.1.pdf` usando:
 Crie um ambiente com Python 3.11+:
 
 ```bash
-python3 -m venv .venv
+python -m venv .venv
 ```
 
-Se o seu Python for o `python@3.14` do Homebrew e a GUI reclamar de `_tkinter`, instale o suporte ao Tk:
+Se quiser ativar o ambiente no PowerShell:
 
 ```bash
-brew install python-tk@3.14
+.venv\Scripts\Activate.ps1
 ```
 
-Rode a solucao padrao:
+Para rodar no terminal:
 
 ```bash
-python3 main.py
-```
-
-O modo padrao mantem a ordem fixa dos checkpoints do enunciado.
-
-Para ver a comparacao explicitamente:
-
-```bash
-python3 main.py --compare-search
+python main.py
 ```
 
 Para abrir a interface grafica:
 
 ```bash
-python3 main.py --gui
+python main.py --gui
 ```
 
 Para visualizar os movimentos no terminal:
 
 ```bash
-python3 main.py --animate
+python main.py --animate
+```
+
+Para comparar `A*`, `Dijkstra` e `Greedy` antes da execucao:
+
+```bash
+python main.py --compare-search
+```
+
+Para escolher automaticamente o melhor algoritmo entre os disponiveis no mapa atual:
+
+```bash
+python main.py --search auto
 ```
 
 ## Configurabilidade
@@ -71,9 +88,3 @@ Com o mapa `Instrucoes/MAPA_LENDA-AANG.txt`:
 - custo total do A*: `2798.000000`
 - custo total da combinatoria: `1805.548602`
 - custo total final: `4603.548602`
-
-## Testes
-
-```bash
-python3 -m unittest discover -s tests
-```
