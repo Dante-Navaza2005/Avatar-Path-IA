@@ -1,3 +1,5 @@
+"""Animacao em terminal da jornada calculada pelo programa."""
+
 from __future__ import annotations
 
 import time
@@ -22,6 +24,8 @@ def _display_symbol(
     current: Coordinate,
     visited: set[Coordinate],
 ) -> str:
+    """Escolhe o simbolo exibido para cada celula do viewport da animacao."""
+
     if coord == current:
         return "@"
 
@@ -38,6 +42,8 @@ def _render_viewport(
     viewport_height: int,
     viewport_width: int,
 ) -> str:
+    """Desenha a janela local do mapa em torno do agente durante a animacao."""
+
     center_row, center_col = current
     half_height = viewport_height // 2
     half_width = viewport_width // 2
@@ -59,6 +65,8 @@ def _render_viewport(
 
 
 def _segment_status(segment: SegmentResult) -> str:
+    """Resume o trecho atual e a equipe responsavel pela etapa correspondente."""
+
     if segment.stage_assignment is None:
         return f"Trecho {segment.start_symbol} -> {segment.end_symbol} | chegada final"
 
@@ -76,6 +84,8 @@ def build_animation_frames(
     result: JourneyResult,
     step_stride: int = 1,
 ) -> tuple[AnimationFrame, ...]:
+    """Transforma a solucao final em quadros para a animacao no terminal e na GUI."""
+
     frames: list[AnimationFrame] = []
     movement_cost = 0
     stage_cost = 0.0
@@ -115,8 +125,8 @@ def build_animation_frames(
             current_stage_cost = stage_cost + (stage_time if is_last_step else 0.0)
             current_energy_usage = energy_usage.copy()
 
-            # O custo da etapa e o gasto de energia so entram quando o grupo
-            # realmente chega ao checkpoint de destino daquele trecho.
+            # O custo combinatorio e o gasto de energia so entram quando o grupo
+            # realmente chega ao checkpoint em que a etapa e realizada.
             if is_last_step and segment.stage_assignment is not None:
                 for name in segment.stage_assignment.characters:
                     current_energy_usage[name] += 1
@@ -145,20 +155,20 @@ def build_animation_frames(
 
 
 def animate_journey(result: JourneyResult, visualization: VisualizationConfig) -> None:
+    """Exibe a solucao do trabalho passo a passo no terminal."""
+
     visited: set[Coordinate] = set()
     frames = build_animation_frames(result, visualization.step_stride)
 
     for frame in frames[1:]:
         segment = result.segments[frame.segment_index]
         visited.add(frame.coordinate)
-        segment_stage_cost = frame.stage_cost
         movement_cost = frame.movement_cost
+        stage_cost = frame.stage_cost
         total_cost = frame.total_cost
 
-        # Enquanto ainda estamos andando, o frame carrega o acumulado anterior
-        # da combinatoria; por isso removemos a etapa atual do texto parcial.
         if not frame.stage_applied and segment.stage_assignment is not None:
-            segment_stage_cost -= segment.stage_assignment.time_cost
+            stage_cost -= segment.stage_assignment.time_cost
 
         frame_text = _render_viewport(
             map_data=result.map_data,
@@ -173,7 +183,7 @@ def animate_journey(result: JourneyResult, visualization: VisualizationConfig) -
             + "\n\n"
             + _segment_status(segment)
             + f"\nMovimento acumulado: {format_cost(movement_cost)}"
-            + f"\nCusto acumulado das etapas: {format_cost(segment_stage_cost)}"
+            + f"\nCusto acumulado das etapas: {format_cost(stage_cost)}"
             + f"\nCusto total acumulado: {format_cost(total_cost)}"
             + "\nEnergia: "
             + " | ".join(

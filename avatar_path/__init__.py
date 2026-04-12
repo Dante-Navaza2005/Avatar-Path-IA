@@ -1,2 +1,1 @@
-"""Ferramentas para planejar a jornada do Avatar no mapa do trabalho."""
-
+"""Pacote principal da solucao do trabalho Avatar Path."""

@@ -1,1 +1,1 @@
-"""Componentes de interface e visualizacao da jornada."""
+"""Componentes da interface grafica e da animacao do trabalho."""

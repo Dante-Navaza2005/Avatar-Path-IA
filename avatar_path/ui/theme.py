@@ -1,10 +1,11 @@
+"""Tema visual centralizado da interface grafica do trabalho."""
+
 from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
 
 
-# Concentrar o tema aqui evita cores e fontes espalhadas por toda a GUI.
 BG = "#1e1e2e"
 BG_SURFACE = "#262637"
 BG_CARD = "#2e2e42"
@@ -41,6 +42,8 @@ TERRAIN_LABELS = {
 
 
 def configure_style(root: tk.Misc) -> None:
+    """Aplica um tema unico para evitar cores e fontes espalhadas pela GUI."""
+
     style = ttk.Style(root)
     try:
         style.theme_use("clam")
@@ -49,7 +52,6 @@ def configure_style(root: tk.Misc) -> None:
 
     style.configure("App.TFrame", background=BG)
     style.configure("Card.TFrame", background=BG_CARD)
-    style.configure("Surface.TFrame", background=BG_SURFACE)
     style.configure(
         "Panel.TLabelframe",
         background=BG_CARD,

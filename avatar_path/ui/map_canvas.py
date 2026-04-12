@@ -1,3 +1,5 @@
+"""Desenho do mapa e do marcador animado na interface grafica."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -16,8 +18,8 @@ from avatar_path.ui.theme import (
 
 @dataclass
 class MapCanvasState:
-    # O Tkinter libera a imagem se nenhuma referencia Python sobrar.
-    # Por isso guardamos os dois PhotoImage junto com os ids do canvas.
+    """Guarda os elementos do canvas que precisam ser atualizados ao longo da animacao."""
+
     base_map_photo: tk.PhotoImage
     scaled_map_photo: tk.PhotoImage
     path_line_id: int
@@ -29,6 +31,8 @@ def coord_bounds(
     cell_size: int,
     padding: int,
 ) -> tuple[float, float, float, float]:
+    """Converte uma coordenada da matriz no retangulo correspondente no canvas."""
+
     row, col = coord
     x1 = padding + col * cell_size
     y1 = padding + row * cell_size
@@ -38,6 +42,8 @@ def coord_bounds(
 
 
 def coord_center(coord: Coordinate, cell_size: int, padding: int) -> tuple[float, float]:
+    """Retorna o centro visual de uma coordenada do mapa no canvas."""
+
     x1, y1, x2, y2 = coord_bounds(coord, cell_size, padding)
     return (x1 + x2) / 2, (y1 + y2) / 2
 
@@ -49,6 +55,8 @@ def draw_static_map(
     cell_size: int,
     padding: int,
 ) -> MapCanvasState:
+    """Desenha o mapa fixo do trabalho, com terrenos e checkpoints."""
+
     map_data = result.map_data
     width = map_data.width * cell_size + padding * 2
     height = map_data.height * cell_size + padding * 2
@@ -65,12 +73,7 @@ def draw_static_map(
         base_map_photo.put(row_colors, to=(0, row))
 
     scaled_map_photo = base_map_photo.zoom(cell_size, cell_size)
-    canvas.create_image(
-        padding,
-        padding,
-        image=scaled_map_photo,
-        anchor="nw",
-    )
+    canvas.create_image(padding, padding, image=scaled_map_photo, anchor="nw")
 
     for checkpoint, coord in map_data.checkpoints.items():
         x1, y1, x2, y2 = coord_bounds(coord, cell_size, padding)
@@ -119,6 +122,8 @@ def build_path_points(
     cell_size: int,
     padding: int,
 ) -> list[float]:
+    """Converte o caminho percorrido ate um frame na lista de pontos da linha."""
+
     points: list[float] = []
     for frame in frames[: frame_index + 1]:
         x, y = coord_center(frame.coordinate, cell_size, padding)
@@ -136,6 +141,8 @@ def update_marker_position(
     cell_size: int,
     padding: int,
 ) -> None:
+    """Move o marcador amarelo para a posicao atual do agente."""
+
     marker_radius = max(5, cell_size + 2)
     center_x, center_y = coord_center(coord, cell_size, padding)
     canvas.coords(
@@ -154,6 +161,8 @@ def center_on_coordinate(
     cell_size: int,
     padding: int,
 ) -> None:
+    """Centraliza o scroll da interface na coordenada atual da animacao."""
+
     canvas.update_idletasks()
     center_x, center_y = coord_center(coord, cell_size, padding)
     scroll_region = canvas.cget("scrollregion").split()
