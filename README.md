@@ -6,7 +6,7 @@
 
 ## Integrantes
 
-- `Breno` - Matricula: `XXXXXXXXX`
+- `Breno de Andrade Soares` - Matricula: `2320363`
 - `Dante` - Matricula: `XXXXXXXXX`
 - `Rafael Soares Estevão` - Matricula: `2320470`
 
