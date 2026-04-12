@@ -1,3 +1,5 @@
+"""Fachada publica da etapa combinatoria de escolha de equipes."""
+
 from __future__ import annotations
 
 from avatar_path.domain import CharacterConfig
@@ -6,7 +8,7 @@ from avatar_path.team_planner_state import PlannerSolution, TeamPlannerState, bu
 
 
 class TeamPlanner:
-    """Fachada publica da etapa de alocacao de equipes da jornada."""
+    """Resolve a parte do enunciado que distribui personagens pelas etapas."""
 
     def __init__(
         self,
@@ -15,6 +17,8 @@ class TeamPlanner:
         stage_difficulties: dict[str, int],
         reserved_final_energy: int = 0,
     ) -> None:
+        """Monta o estado fixo da combinatoria antes de executar as metaheuristicas."""
+
         self.state = build_team_planner_state(
             characters=characters,
             ordered_stage_symbols=ordered_stage_symbols,
@@ -24,9 +28,13 @@ class TeamPlanner:
 
     @property
     def stage_symbols(self) -> tuple[str, ...]:
+        """Expoe as etapas que realmente entram na otimizacao das equipes."""
+
         return self.state.stage_symbols
 
     def optimize(self) -> PlannerSolution:
+        """Procura uma boa distribuicao de equipes respeitando a energia maxima."""
+
         return optimize_with_genetic_hill_climbing_simulated_annealing(self.state)
 
 

@@ -1,3 +1,5 @@
+"""Interface grafica para visualizar a jornada resolvida pelo programa."""
+
 from __future__ import annotations
 
 import tkinter as tk
@@ -36,7 +38,11 @@ from avatar_path.ui.theme import (
 
 
 class JourneyGUI(tk.Tk):
+    """Mostra, em uma janela, o mapa, os custos e a execucao da jornada."""
+
     def __init__(self, result: JourneyResult) -> None:
+        """Prepara os widgets que exibem a solucao do trabalho em tempo real."""
+
         super().__init__()
         self.result = result
         self.frames = build_animation_frames(result, step_stride=1)
@@ -74,6 +80,8 @@ class JourneyGUI(tk.Tk):
         self._update_frame(0, recenter=True)
 
     def _build_layout(self) -> None:
+        """Organiza os grandes blocos da interface: cabecalho, mapa e painel lateral."""
+
         root = ttk.Frame(self, style="App.TFrame", padding=16)
         root.pack(fill="both", expand=True)
         root.columnconfigure(0, weight=4)
@@ -85,6 +93,8 @@ class JourneyGUI(tk.Tk):
         self._build_side_panel(root)
 
     def _build_header(self, parent: ttk.Frame) -> None:
+        """Cria o cabecalho que resume as tecnicas usadas no trabalho."""
+
         header = ttk.Frame(parent, style="App.TFrame")
         header.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 14))
         header.columnconfigure(0, weight=1)
@@ -94,11 +104,13 @@ class JourneyGUI(tk.Tk):
         )
         ttk.Label(
             header,
-            text="Busca heuristica no mapa  |  Hill Climbing + Simulated Annealing nas equipes",
+            text="A* no mapa  |  Algoritmo Genetico + Hill Climbing + Simulated Annealing nas equipes",
             style="Subheader.TLabel",
         ).grid(row=1, column=0, sticky="w", pady=(2, 0))
 
     def _build_map_panel(self, parent: ttk.Frame) -> None:
+        """Monta a area do mapa com scroll e legenda dos terrenos."""
+
         map_card = ttk.Frame(parent, style="Card.TFrame", padding=12)
         map_card.grid(row=1, column=0, sticky="nsew", padx=(0, 10))
         map_card.columnconfigure(0, weight=1)
@@ -136,6 +148,8 @@ class JourneyGUI(tk.Tk):
         legend.columnconfigure(len(TERRAIN_LEGEND_ORDER) * 2 + 2, weight=1)
 
     def _build_side_panel(self, parent: ttk.Frame) -> None:
+        """Monta os controles e resumos exibidos ao lado do mapa."""
+
         side_panel = ttk.Frame(parent, style="App.TFrame")
         side_panel.grid(row=1, column=1, sticky="nsew")
         side_panel.columnconfigure(0, weight=1)
@@ -146,6 +160,8 @@ class JourneyGUI(tk.Tk):
         self._build_segments_table(side_panel)
 
     def _build_controls(self, parent: ttk.Frame) -> None:
+        """Cria os botoes que controlam a animacao da solucao."""
+
         controls = ttk.LabelFrame(parent, text="Controles", style="Panel.TLabelframe", padding=10)
         controls.grid(row=0, column=0, sticky="ew")
         controls.columnconfigure(0, weight=1)
@@ -176,6 +192,8 @@ class JourneyGUI(tk.Tk):
         ).grid(row=3, column=0, columnspan=2, sticky="ew")
 
     def _build_summary(self, parent: ttk.Frame) -> None:
+        """Cria o painel textual com custos, equipe e energia da etapa atual."""
+
         summary = ttk.LabelFrame(parent, text="Estado Atual", style="Panel.TLabelframe", padding=10)
         summary.grid(row=1, column=0, sticky="ew", pady=(10, 10))
         summary.columnconfigure(1, weight=1)
@@ -202,6 +220,8 @@ class JourneyGUI(tk.Tk):
         self._add_info_row(summary, row_idx, "Custo total", self.total_var)
 
     def _build_segments_table(self, parent: ttk.Frame) -> None:
+        """Cria a tabela com todos os trechos planejados da jornada."""
+
         segments_frame = ttk.LabelFrame(
             parent, text="Trechos Planejados", style="Panel.TLabelframe", padding=8
         )
@@ -231,12 +251,16 @@ class JourneyGUI(tk.Tk):
         self.segment_tree.configure(yscrollcommand=tree_scroll.set)
 
     def _add_section_separator(self, parent: ttk.Frame, row: int, title: str) -> None:
+        """Insere um subtitulo visual entre grupos de informacao."""
+
         sep_frame = ttk.Frame(parent, style="Card.TFrame")
         sep_frame.grid(row=row, column=0, columnspan=2, sticky="ew", pady=(8, 4))
         ttk.Label(sep_frame, text=title, style="SectionTitle.TLabel").pack(anchor="w")
         tk.Frame(sep_frame, height=1, bg=SEPARATOR_COLOR).pack(fill="x", pady=(2, 0))
 
     def _add_info_row(self, parent: ttk.Frame, row: int, label: str, variable: tk.StringVar) -> int:
+        """Adiciona uma linha padrao de rotulo e valor ao painel lateral."""
+
         ttk.Label(parent, text=f"{label}:", style="Body.TLabel").grid(
             row=row, column=0, sticky="nw", padx=(0, 8), pady=2
         )
@@ -246,6 +270,8 @@ class JourneyGUI(tk.Tk):
         return row + 1
 
     def _add_legend_item(self, parent: ttk.Frame, column: int, label: str, color: str) -> None:
+        """Desenha um item da legenda dos terrenos e checkpoints."""
+
         swatch = tk.Canvas(parent, width=22, height=16, bg=BG_CARD, highlightthickness=0)
         swatch.grid(row=0, column=column * 2, padx=(0, 3))
         swatch.create_rectangle(2, 2, 20, 14, fill=color, outline=color, width=0)
@@ -254,6 +280,8 @@ class JourneyGUI(tk.Tk):
         )
 
     def _draw_map(self) -> None:
+        """Desenha a versao estatica do mapa antes da animacao comecar."""
+
         self.map_state = draw_static_map(
             canvas=self.canvas,
             result=self.result,
@@ -263,6 +291,8 @@ class JourneyGUI(tk.Tk):
         )
 
     def _populate_segments(self) -> None:
+        """Preenche a tabela com o resumo de cada trecho da jornada."""
+
         for index, segment in enumerate(self.result.segments):
             self.segment_tree.insert(
                 "",
@@ -272,6 +302,8 @@ class JourneyGUI(tk.Tk):
             )
 
     def _update_frame(self, frame_index: int, recenter: bool = False) -> None:
+        """Atualiza mapa, marcador e painel lateral para um frame especifico."""
+
         if self.map_state is None:
             return
 
@@ -279,8 +311,6 @@ class JourneyGUI(tk.Tk):
         frame = self.frames[frame_index]
         segment = self.result.segments[min(frame.segment_index, len(self.result.segments) - 1)]
 
-        # Se a animacao avancou um unico frame, basta estender a linha atual.
-        # Em saltos maiores, reconstruimos o caminho para evitar inconsistencias.
         if frame_index == 0:
             self.current_path_points = build_path_points(
                 self.frames,
@@ -330,6 +360,8 @@ class JourneyGUI(tk.Tk):
             )
 
     def _select_segment(self, segment_index: int) -> None:
+        """Mantem selecionada a linha da tabela ligada ao frame atual."""
+
         item_id = f"segment-{segment_index}"
         if not self.segment_tree.exists(item_id):
             return
@@ -342,6 +374,8 @@ class JourneyGUI(tk.Tk):
         self.segment_tree.see(item_id)
 
     def _schedule_next(self) -> None:
+        """Agenda o proximo frame enquanto a animacao estiver em execucao."""
+
         if not self.playing:
             return
         if self.current_frame_index >= len(self.frames) - 1:
@@ -353,6 +387,8 @@ class JourneyGUI(tk.Tk):
         self.after_handle = self.after(max(5, self.speed_var.get()), self._schedule_next)
 
     def _play(self) -> None:
+        """Inicia ou retoma a animacao da jornada."""
+
         if self.playing:
             return
         self.playing = True
@@ -360,6 +396,8 @@ class JourneyGUI(tk.Tk):
         self._schedule_next()
 
     def _pause(self) -> None:
+        """Interrompe temporariamente a animacao da jornada."""
+
         self.playing = False
         if self.after_handle is not None:
             self.after_cancel(self.after_handle)
@@ -368,10 +406,14 @@ class JourneyGUI(tk.Tk):
             self.status_var.set("Animacao pausada.")
 
     def _reset(self) -> None:
+        """Volta a exibicao para o primeiro frame da jornada."""
+
         self._pause()
         self._update_frame(0, recenter=True)
 
     def _step_once(self) -> None:
+        """Avanca a visualizacao para o fim do trecho atual ou para o proximo trecho."""
+
         self._pause()
         current_segment_index = self.frames[self.current_frame_index].segment_index
         target_index = self.segment_last_frame_index.get(current_segment_index, self.current_frame_index)
@@ -381,6 +423,8 @@ class JourneyGUI(tk.Tk):
             self._update_frame(target_index, recenter=True)
 
     def _on_segment_clicked(self, event: tk.Event) -> None:
+        """Permite saltar para um trecho especifico ao clicar na tabela."""
+
         item_id = self.segment_tree.identify_row(event.y)
         if not item_id or not item_id.startswith("segment-"):
             return
@@ -393,5 +437,7 @@ class JourneyGUI(tk.Tk):
 
 
 def launch_gui(result: JourneyResult) -> None:
+    """Abre a interface grafica que apresenta a solucao do trabalho."""
+
     app = JourneyGUI(result)
     app.mainloop()

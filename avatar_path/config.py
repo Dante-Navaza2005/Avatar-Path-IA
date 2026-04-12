@@ -1,3 +1,5 @@
+"""Leitura da configuracao editavel do trabalho a partir de JSON."""
+
 from __future__ import annotations
 
 import json
@@ -7,11 +9,11 @@ from avatar_path.domain import CharacterConfig, JourneyConfig, VisualizationConf
 
 
 def load_config(path: str | Path) -> JourneyConfig:
+    """Le a configuracao do trabalho e transforma o JSON em objetos do dominio."""
+
     config_path = Path(path)
     payload = json.loads(config_path.read_text(encoding="utf-8"))
 
-    # A configuracao nasce no JSON, mas o restante do projeto trabalha com
-    # dataclasses imutaveis para facilitar leitura e depuracao.
     characters = tuple(
         CharacterConfig(
             name=name,
@@ -21,7 +23,13 @@ def load_config(path: str | Path) -> JourneyConfig:
         for name, values in payload["characters"].items()
     )
 
-    visualization = payload["visualization"]
+    visualization_data = payload["visualization"]
+    visualization = VisualizationConfig(
+        delay_seconds=float(visualization_data["delay_seconds"]),
+        viewport_height=int(visualization_data["viewport_height"]),
+        viewport_width=int(visualization_data["viewport_width"]),
+        step_stride=int(visualization_data["step_stride"]),
+    )
 
     return JourneyConfig(
         map_path=Path(payload["map_path"]),
@@ -33,11 +41,5 @@ def load_config(path: str | Path) -> JourneyConfig:
         characters=characters,
         checkpoint_cost=int(payload["checkpoint_cost"]),
         block_future_checkpoints=bool(payload["block_future_checkpoints"]),
-        visualization=VisualizationConfig(
-            delay_seconds=float(visualization["delay_seconds"]),
-            viewport_height=int(visualization["viewport_height"]),
-            viewport_width=int(visualization["viewport_width"]),
-            step_stride=int(visualization["step_stride"]),
-        ),
+        visualization=visualization,
     )
-
