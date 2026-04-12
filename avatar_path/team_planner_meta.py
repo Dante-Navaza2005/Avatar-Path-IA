@@ -6,74 +6,162 @@ from random import Random
 from avatar_path.team_planner_state import PlannerSolution, TeamPlannerState
 
 
-SEEDS = (1771, 1949, 2213, 2591)
-RESTARTS = 12
-ITERATIONS_PER_RESTART = 12000
-INITIAL_TEMPERATURE = 45.0
+PlannerCandidate = tuple[tuple[int, ...], tuple[int, ...], float]
+
+EPSILON = 1e-12
+
+GENETIC_SEEDS = (1771,)
+GENETIC_POPULATION_SIZE = 24
+GENETIC_GENERATIONS = 20
+GENETIC_ELITE_COUNT = 4
+GENETIC_TOURNAMENT_SIZE = 3
+GENETIC_MUTATION_RATE = 0.85
+GENETIC_MUTATION_MAX_STEPS = 4
+GENETIC_INITIAL_PERTURBATION_STEPS = 10
+GENETIC_PERTURBATION_GROWTH = 3
+
+ANNEALING_SEEDS = (1771,)
+ANNEALING_RESTARTS = 2
+ANNEALING_ITERATIONS_PER_RESTART = 2000
+INITIAL_TEMPERATURE = 35.0
 COOLING_RATE = 0.999
-PERTURBATION_STEPS = 40
+PERTURBATION_STEPS = 18
 
 
-def optimize_with_hill_climbing_simulated_annealing(
+def optimize_with_genetic_hill_climbing_simulated_annealing(
     state: TeamPlannerState,
 ) -> PlannerSolution:
-    # Comecamos com um guloso forte para reduzir o espaco de busca e,
-    # a partir dele, aplicamos annealing com varios reinicios.
+    # O pipeline agora combina populacao, recombinacao e busca local:
+    # o genetico amplia a exploracao e o hill climbing faz o acabamento.
     greedy_assignments, _, greedy_cost = optimize_with_greedy_balancing(state)
     greedy_masks = state.masks_from_assignments(greedy_assignments)
     greedy_usage = state.usage_for_masks(greedy_masks)
-    best_masks, _, best_cost = hill_climb_polish(
+    best_candidate = hill_climb_polish(
         state,
         greedy_masks,
         greedy_usage,
         greedy_cost,
     )
 
-    for seed in SEEDS:
+    genetic_candidate = optimize_with_genetic_algorithm(state, best_candidate)
+    if genetic_candidate[2] + EPSILON < best_candidate[2]:
+        best_candidate = genetic_candidate
+
+    annealed_candidate = refine_with_simulated_annealing(state, best_candidate)
+    if annealed_candidate[2] + EPSILON < best_candidate[2]:
+        best_candidate = annealed_candidate
+
+    return _build_solution(state, best_candidate)
+
+
+def optimize_with_hill_climbing_simulated_annealing(
+    state: TeamPlannerState,
+) -> PlannerSolution:
+    return optimize_with_genetic_hill_climbing_simulated_annealing(state)
+
+
+def optimize_with_genetic_algorithm(
+    state: TeamPlannerState,
+    base_candidate: PlannerCandidate,
+) -> PlannerCandidate:
+    best_candidate = base_candidate
+
+    for seed in GENETIC_SEEDS:
         rng = Random(seed)
-        for restart_idx in range(RESTARTS):
-            current_masks = greedy_masks
-            current_usage = greedy_usage
-            current_cost = greedy_cost
+        population = _build_initial_population(state, base_candidate, rng)
 
+        for generation_idx in range(GENETIC_GENERATIONS):
+            population.sort(key=lambda item: item[2])
+            next_population = list(population[:GENETIC_ELITE_COUNT])
+            seen_masks = {candidate[0] for candidate in next_population}
+
+            while len(next_population) < GENETIC_POPULATION_SIZE:
+                left_parent = _select_parent(population, rng)
+                right_parent = _select_parent(population, rng)
+                child_masks = _uniform_crossover(left_parent[0], right_parent[0], rng)
+                child_candidate = repair_candidate(state, child_masks, rng)
+
+                if rng.random() < GENETIC_MUTATION_RATE:
+                    child_candidate = _perturb_candidate(
+                        state,
+                        child_candidate,
+                        rng,
+                        1 + rng.randrange(GENETIC_MUTATION_MAX_STEPS),
+                    )
+                    child_candidate = repair_candidate(state, child_candidate[0], rng)
+
+                if generation_idx % 3 == 0 or len(next_population) < GENETIC_ELITE_COUNT * 2:
+                    child_candidate = hill_climb_polish(state, *child_candidate)
+
+                if child_candidate[0] in seen_masks:
+                    continue
+
+                next_population.append(child_candidate)
+                seen_masks.add(child_candidate[0])
+
+            population = next_population
+
+        candidate = min(population, key=lambda item: item[2])
+        candidate = hill_climb_polish(state, *candidate)
+        if candidate[2] + EPSILON < best_candidate[2]:
+            best_candidate = candidate
+
+    return best_candidate
+
+
+def refine_with_simulated_annealing(
+    state: TeamPlannerState,
+    initial_candidate: PlannerCandidate,
+) -> PlannerCandidate:
+    best_candidate = initial_candidate
+
+    for seed in ANNEALING_SEEDS:
+        rng = Random(seed)
+        for restart_idx in range(ANNEALING_RESTARTS):
+            current_candidate = initial_candidate
             if restart_idx > 0:
-                for _ in range(PERTURBATION_STEPS + restart_idx * 4):
-                    neighbor = sample_neighbor(state, current_masks, current_usage, current_cost, rng)
-                    if neighbor is None:
-                        break
-                    current_masks, current_usage, current_cost = neighbor
+                current_candidate = _perturb_candidate(
+                    state,
+                    current_candidate,
+                    rng,
+                    PERTURBATION_STEPS + restart_idx * 4,
+                )
 
+            current_masks, current_usage, current_cost = current_candidate
             temperature = INITIAL_TEMPERATURE
-            for _ in range(ITERATIONS_PER_RESTART):
-                neighbor = sample_neighbor(state, current_masks, current_usage, current_cost, rng)
+
+            for _ in range(ANNEALING_ITERATIONS_PER_RESTART):
+                neighbor = sample_neighbor(
+                    state,
+                    current_masks,
+                    current_usage,
+                    current_cost,
+                    rng,
+                )
                 if neighbor is None:
                     break
 
                 next_masks, next_usage, next_cost = neighbor
                 delta = next_cost - current_cost
-                # O simulated annealing aceita, ocasionalmente, solucoes piores
-                # para escapar de otimos locais e voltar a melhorar depois.
                 if delta <= 0.0 or rng.random() < exp(-delta / temperature):
                     current_masks = next_masks
                     current_usage = next_usage
                     current_cost = next_cost
-                    if current_cost + 1e-12 < best_cost:
-                        best_masks = current_masks
-                        best_cost = current_cost
+                    if current_cost + EPSILON < best_candidate[2]:
+                        best_candidate = (current_masks, current_usage, current_cost)
 
                 temperature *= COOLING_RATE
 
-            current_masks, current_usage, current_cost = hill_climb_polish(
+            polished_candidate = hill_climb_polish(
                 state,
                 current_masks,
                 current_usage,
                 current_cost,
             )
-            if current_cost + 1e-12 < best_cost:
-                best_masks = current_masks
-                best_cost = current_cost
+            if polished_candidate[2] + EPSILON < best_candidate[2]:
+                best_candidate = polished_candidate
 
-    return state.build_assignments(dict(zip(state.stage_symbols, best_masks)))
+    return best_candidate
 
 
 def optimize_with_greedy_balancing(
@@ -130,7 +218,7 @@ def optimize_with_greedy_balancing(
                 # mais um personagem na equipe atual.
                 next_agility = current_agility + state.agility_units[char_idx]
                 gain = (difficulty * 10.0 / current_agility) - (difficulty * 10.0 / next_agility)
-                if gain > best_gain + 1e-12:
+                if gain > best_gain + EPSILON:
                     best_gain = gain
                     best_stage_idx = stage_symbol
                     best_char_idx = char_idx
@@ -146,13 +234,143 @@ def optimize_with_greedy_balancing(
     return state.build_assignments(chosen_mask_by_symbol)
 
 
+def repair_candidate(
+    state: TeamPlannerState,
+    masks: tuple[int, ...],
+    rng: Random,
+) -> PlannerCandidate:
+    current_masks = list(masks)
+    character_count = len(state.characters)
+    usage = [0] * character_count
+
+    for stage_idx, mask in enumerate(current_masks):
+        if mask == 0:
+            available_chars = tuple(
+                idx
+                for idx in range(character_count)
+                if usage[idx] < state.max_energies[idx]
+            )
+            if not available_chars:
+                available_chars = tuple(range(character_count))
+
+            best_char_idx = max(
+                available_chars,
+                key=lambda idx: (state.agility_units[idx], -usage[idx]),
+            )
+            current_masks[stage_idx] = 1 << best_char_idx
+
+        for char_idx in state.character_indices_by_mask[current_masks[stage_idx]]:
+            usage[char_idx] += 1
+
+    while True:
+        overused_chars = [
+            idx
+            for idx, count in enumerate(usage)
+            if count > state.max_energies[idx]
+        ]
+        if not overused_chars:
+            break
+
+        overused_char_idx = max(
+            overused_chars,
+            key=lambda idx: (
+                usage[idx] - state.max_energies[idx],
+                state.agility_units[idx],
+            ),
+        )
+        overused_bit = 1 << overused_char_idx
+        best_fix: tuple[float, int, int | None] | None = None
+
+        for stage_idx, mask in enumerate(current_masks):
+            if not (mask & overused_bit):
+                continue
+
+            current_cost = state.stage_time(state.stage_symbols[stage_idx], mask)
+
+            if mask.bit_count() > 1:
+                next_mask = mask ^ overused_bit
+                remove_delta = (
+                    state.stage_time(state.stage_symbols[stage_idx], next_mask)
+                    - current_cost
+                )
+                candidate_fix = (remove_delta, stage_idx, None)
+                if best_fix is None or candidate_fix < best_fix:
+                    best_fix = candidate_fix
+
+            for replacement_idx in range(character_count):
+                replacement_bit = 1 << replacement_idx
+                if replacement_idx == overused_char_idx:
+                    continue
+                if usage[replacement_idx] >= state.max_energies[replacement_idx]:
+                    continue
+                if mask & replacement_bit:
+                    continue
+
+                next_mask = (mask ^ overused_bit) | replacement_bit
+                replace_delta = (
+                    state.stage_time(state.stage_symbols[stage_idx], next_mask)
+                    - current_cost
+                )
+                candidate_fix = (replace_delta, stage_idx, replacement_idx)
+                if best_fix is None or candidate_fix < best_fix:
+                    best_fix = candidate_fix
+
+        if best_fix is None:
+            raise ValueError("Nao foi possivel reparar um cromossomo invalido.")
+
+        _, stage_idx, replacement_idx = best_fix
+        current_masks[stage_idx] ^= overused_bit
+        usage[overused_char_idx] -= 1
+        if replacement_idx is not None:
+            current_masks[stage_idx] |= 1 << replacement_idx
+            usage[replacement_idx] += 1
+
+    total_usage = sum(usage)
+    while total_usage < state.usable_energy_budget:
+        best_additions: list[tuple[float, float, int, int]] = []
+
+        for stage_idx, mask in enumerate(current_masks):
+            current_cost = state.stage_time(state.stage_symbols[stage_idx], mask)
+
+            for char_idx in range(character_count):
+                bit = 1 << char_idx
+                if usage[char_idx] >= state.max_energies[char_idx]:
+                    continue
+                if mask & bit:
+                    continue
+
+                delta = (
+                    state.stage_time(state.stage_symbols[stage_idx], mask | bit)
+                    - current_cost
+                )
+                best_additions.append((delta, rng.random(), stage_idx, char_idx))
+
+        if not best_additions:
+            break
+
+        best_additions.sort(key=lambda item: (item[0], item[1]))
+        delta, _, stage_idx, char_idx = best_additions[
+            min(len(best_additions) - 1, rng.randrange(min(4, len(best_additions))))
+        ]
+        if delta > EPSILON:
+            break
+
+        current_masks[stage_idx] |= 1 << char_idx
+        usage[char_idx] += 1
+        total_usage += 1
+
+    repaired_masks = tuple(current_masks)
+    repaired_usage = tuple(usage)
+    return repaired_masks, repaired_usage, _total_cost_for_masks(state, repaired_masks)
+
+
 def sample_neighbor(
     state: TeamPlannerState,
     masks: tuple[int, ...],
     usage: tuple[int, ...],
     total_cost: float,
     rng: Random,
-) -> tuple[tuple[int, ...], tuple[int, ...], float] | None:
+) -> PlannerCandidate | None:
     stage_count = len(masks)
     # "move" aparece duas vezes de proposito porque costuma gerar vizinhos
     # melhores do que add/remove em menos passos.
@@ -285,7 +503,7 @@ def hill_climb_polish(
     masks: tuple[int, ...],
     usage: tuple[int, ...],
     total_cost: float,
-) -> tuple[tuple[int, ...], tuple[int, ...], float]:
+) -> PlannerCandidate:
     current_masks = list(masks)
     current_usage = list(usage)
     current_cost = total_cost
@@ -293,7 +511,7 @@ def hill_climb_polish(
     character_count = len(state.characters)
 
     while True:
-        best_delta = -1e-12
+        best_delta = -EPSILON
         best_move: tuple[str, int, int, int | None] | None = None
         current_total_usage = sum(current_usage)
 
@@ -391,3 +609,96 @@ def hill_climb_polish(
             current_usage[second_idx] += 1
 
         current_cost += best_delta
+
+
+def _build_initial_population(
+    state: TeamPlannerState,
+    base_candidate: PlannerCandidate,
+    rng: Random,
+) -> list[PlannerCandidate]:
+    population = [base_candidate]
+    seen_masks = {base_candidate[0]}
+    seed_idx = 0
+
+    while len(population) < GENETIC_POPULATION_SIZE:
+        candidate = _perturb_candidate(
+            state,
+            base_candidate,
+            rng,
+            GENETIC_INITIAL_PERTURBATION_STEPS + seed_idx * GENETIC_PERTURBATION_GROWTH,
+        )
+        candidate = repair_candidate(state, candidate[0], rng)
+        candidate = hill_climb_polish(state, *candidate)
+        seed_idx += 1
+
+        if candidate[0] in seen_masks:
+            continue
+
+        population.append(candidate)
+        seen_masks.add(candidate[0])
+
+    return population
+
+
+def _build_solution(
+    state: TeamPlannerState,
+    candidate: PlannerCandidate,
+) -> PlannerSolution:
+    return state.build_assignments(dict(zip(state.stage_symbols, candidate[0])))
+
+
+def _perturb_candidate(
+    state: TeamPlannerState,
+    candidate: PlannerCandidate,
+    rng: Random,
+    steps: int,
+) -> PlannerCandidate:
+    current_masks, current_usage, current_cost = candidate
+
+    for _ in range(steps):
+        neighbor = sample_neighbor(
+            state,
+            current_masks,
+            current_usage,
+            current_cost,
+            rng,
+        )
+        if neighbor is None:
+            break
+        current_masks, current_usage, current_cost = neighbor
+
+    return current_masks, current_usage, current_cost
+
+
+def _select_parent(
+    population: list[PlannerCandidate],
+    rng: Random,
+) -> PlannerCandidate:
+    best_candidate: PlannerCandidate | None = None
+    for _ in range(GENETIC_TOURNAMENT_SIZE):
+        candidate = population[rng.randrange(len(population))]
+        if best_candidate is None or candidate[2] < best_candidate[2]:
+            best_candidate = candidate
+    assert best_candidate is not None
+    return best_candidate
+
+
+def _total_cost_for_masks(
+    state: TeamPlannerState,
+    masks: tuple[int, ...],
+) -> float:
+    return sum(
+        state.stage_time(stage_symbol, mask)
+        for stage_symbol, mask in zip(state.stage_symbols, masks)
+    )
+
+
+def _uniform_crossover(
+    left_masks: tuple[int, ...],
+    right_masks: tuple[int, ...],
+    rng: Random,
+) -> tuple[int, ...]:
+    return tuple(
+        left_mask if rng.random() < 0.5 else right_mask
+        for left_mask, right_mask in zip(left_masks, right_masks)
+    )

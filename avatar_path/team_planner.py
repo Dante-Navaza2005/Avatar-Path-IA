@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from avatar_path.domain import CharacterConfig
-from avatar_path.team_planner_meta import optimize_with_hill_climbing_simulated_annealing
+from avatar_path.team_planner_meta import optimize_with_genetic_hill_climbing_simulated_annealing
 from avatar_path.team_planner_state import PlannerSolution, TeamPlannerState, build_team_planner_state
 
 
@@ -27,7 +27,7 @@ class TeamPlanner:
         return self.state.stage_symbols
 
     def optimize(self) -> PlannerSolution:
-        return optimize_with_hill_climbing_simulated_annealing(self.state)
+        return optimize_with_genetic_hill_climbing_simulated_annealing(self.state)
 
 
 __all__ = ["TeamPlanner", "TeamPlannerState"]

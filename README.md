@@ -3,7 +3,7 @@
 Implementacao do trabalho `INF1771_IA_Trabalho_1_2026.1.pdf` usando:
 
 - `A*` para encontrar o menor custo entre checkpoints consecutivos no mapa.
-- `Hill Climbing + Simulated Annealing` para escolher a melhor combinacao de personagens em cada etapa, respeitando o limite de `8` usos por personagem.
+- `Algoritmo Genetico + Hill Climbing + Simulated Annealing` para escolher a melhor combinacao de personagens em cada etapa, respeitando o limite de `8` usos por personagem.
 - visualizacao simples no terminal para acompanhar o deslocamento do agente.
 
 ## Estrutura
@@ -69,8 +69,8 @@ Tudo que o enunciado pede como configuravel esta em `config/default_config.json`
 Com o mapa `Instrucoes/MAPA_LENDA-AANG.txt`:
 
 - custo total do A*: `2798.000000`
-- custo total da combinatoria: `1806.003458`
-- custo total final: `4604.003458`
+- custo total da combinatoria: `1805.548602`
+- custo total final: `4603.548602`
 
 ## Testes
 
