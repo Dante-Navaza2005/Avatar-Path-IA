@@ -3,7 +3,7 @@
 Implementacao do trabalho `INF1771_IA_Trabalho_1_2026.1.pdf` usando:
 
 - `A*` para encontrar o menor custo entre checkpoints consecutivos no mapa.
-- otimizacao inteira exata para escolher a melhor combinacao de personagens em cada etapa, respeitando o limite de `8` usos por personagem.
+- `Hill Climbing + Simulated Annealing` para escolher a melhor combinacao de personagens em cada etapa, respeitando o limite de `8` usos por personagem.
 - visualizacao simples no terminal para acompanhar o deslocamento do agente.
 
 ## Estrutura
@@ -15,10 +15,10 @@ Implementacao do trabalho `INF1771_IA_Trabalho_1_2026.1.pdf` usando:
 
 ## Como executar
 
-Crie um ambiente com Python 3.11+ e instale a dependencia:
+Crie um ambiente com Python 3.11+:
 
 ```bash
-python3 -m pip install -r requirements.txt
+python3 -m venv .venv
 ```
 
 Se o seu Python for o `python@3.14` do Homebrew e a GUI reclamar de `_tkinter`, instale o suporte ao Tk:
@@ -68,9 +68,9 @@ Tudo que o enunciado pede como configuravel esta em `config/default_config.json`
 
 Com o mapa `Instrucoes/MAPA_LENDA-AANG.txt`:
 
-- custo total do A*: `1806`
-- custo total da combinatoria: `1805.5486`
-- custo total final: `3611.5486`
+- custo total do A*: `2798.000000`
+- custo total da combinatoria: `1806.003458`
+- custo total final: `4604.003458`
 
 ## Testes
 

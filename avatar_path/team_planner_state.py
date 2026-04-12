@@ -18,7 +18,6 @@ class TeamPlannerState:
     max_energies: tuple[int, ...]
     usable_energy_budget: int
     agility_units: tuple[int, ...]
-    all_masks: tuple[int, ...]
     character_indices_by_agility: tuple[int, ...]
     agility_sum_by_mask: dict[int, int]
     character_indices_by_mask: dict[int, tuple[int, ...]]
@@ -102,7 +101,6 @@ def build_team_planner_state(
         max_energies=max_energies,
         usable_energy_budget=usable_energy_budget,
         agility_units=agility_units,
-        all_masks=tuple(range(1, 1 << len(characters))),
         character_indices_by_agility=tuple(
             sorted(
                 range(len(characters)),

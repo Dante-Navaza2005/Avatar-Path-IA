@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 from avatar_path.domain import CharacterConfig
-from avatar_path.team_planner_exact import optimize_with_milp
 from avatar_path.team_planner_meta import optimize_with_hill_climbing_simulated_annealing
 from avatar_path.team_planner_state import PlannerSolution, TeamPlannerState, build_team_planner_state
 
 
 class TeamPlanner:
-    """Public facade for the team-allocation step of the journey."""
+    """Fachada publica da etapa de alocacao de equipes da jornada."""
 
     def __init__(
         self,
@@ -29,9 +28,6 @@ class TeamPlanner:
 
     def optimize(self) -> PlannerSolution:
         return optimize_with_hill_climbing_simulated_annealing(self.state)
-
-    def optimize_exact(self) -> PlannerSolution:
-        return optimize_with_milp(self.state)
 
 
 __all__ = ["TeamPlanner", "TeamPlannerState"]
