@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-import tkinter as tk
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QBrush, QColor, QFont, QImage, QPainterPath, QPen, QPixmap
+from PyQt6.QtWidgets import QGraphicsEllipseItem, QGraphicsPathItem, QGraphicsScene, QGraphicsView
 
 from avatar_path.domain import AnimationFrame, Coordinate, JourneyResult
 from avatar_path.ui.theme import (
@@ -14,16 +15,6 @@ from avatar_path.ui.theme import (
     PATH_COLOR,
     TERRAIN_COLORS,
 )
-
-
-@dataclass
-class MapCanvasState:
-    """Guarda os elementos do canvas que precisam ser atualizados ao longo da animacao."""
-
-    base_map_photo: tk.PhotoImage
-    scaled_map_photo: tk.PhotoImage
-    path_line_id: int
-    marker_id: int
 
 
 def coord_bounds(
@@ -48,131 +39,136 @@ def coord_center(coord: Coordinate, cell_size: int, padding: int) -> tuple[float
     return (x1 + x2) / 2, (y1 + y2) / 2
 
 
-def draw_static_map(
-    canvas: tk.Canvas,
-    result: JourneyResult,
-    frames: tuple[AnimationFrame, ...],
-    cell_size: int,
-    padding: int,
-) -> MapCanvasState:
-    """Desenha o mapa fixo do trabalho, com terrenos e checkpoints."""
-
-    map_data = result.map_data
-    width = map_data.width * cell_size + padding * 2
-    height = map_data.height * cell_size + padding * 2
-    canvas.configure(scrollregion=(0, 0, width, height))
-    canvas.create_rectangle(0, 0, width, height, fill=MAP_BACKGROUND, outline="")
-
-    base_map_photo = tk.PhotoImage(width=map_data.width, height=map_data.height)
-    terrain_colors = TERRAIN_COLORS.copy()
-    for symbol in result.config.checkpoint_order:
-        terrain_colors.setdefault(symbol, CHECKPOINT_COLOR)
-
-    for row, line in enumerate(map_data.grid):
-        row_colors = "{" + " ".join(terrain_colors.get(symbol, BG_CARD) for symbol in line) + "}"
-        base_map_photo.put(row_colors, to=(0, row))
-
-    scaled_map_photo = base_map_photo.zoom(cell_size, cell_size)
-    canvas.create_image(padding, padding, image=scaled_map_photo, anchor="nw")
-
-    for checkpoint, coord in map_data.checkpoints.items():
-        x1, y1, x2, y2 = coord_bounds(coord, cell_size, padding)
-        inset = max(1, cell_size // 3)
-        canvas.create_oval(
-            x1 + inset,
-            y1 + inset,
-            x2 - inset,
-            y2 - inset,
-            fill=CHECKPOINT_COLOR,
-            outline="#a03020",
-            width=1,
-        )
-        canvas.create_text(
-            (x1 + x2) / 2,
-            (y1 + y2) / 2,
-            text=checkpoint,
-            fill="white",
-            font=("Segoe UI", 7, "bold"),
-        )
-
-    start_x, start_y = coord_center(frames[0].coordinate, cell_size, padding)
-    path_line_id = canvas.create_line(
-        start_x,
-        start_y,
-        start_x,
-        start_y,
-        fill=PATH_COLOR,
-        width=max(2, cell_size - 1),
-        capstyle=tk.ROUND,
-        joinstyle=tk.ROUND,
-    )
-    marker_id = canvas.create_oval(0, 0, 0, 0, fill=MARKER_COLOR, outline="white", width=2)
-
-    return MapCanvasState(
-        base_map_photo=base_map_photo,
-        scaled_map_photo=scaled_map_photo,
-        path_line_id=path_line_id,
-        marker_id=marker_id,
-    )
-
-
 def build_path_points(
     frames: tuple[AnimationFrame, ...],
     frame_index: int,
     cell_size: int,
     padding: int,
-) -> list[float]:
+) -> list[tuple[float, float]]:
     """Converte o caminho percorrido ate um frame na lista de pontos da linha."""
 
-    points: list[float] = []
+    points: list[tuple[float, float]] = []
     for frame in frames[: frame_index + 1]:
-        x, y = coord_center(frame.coordinate, cell_size, padding)
-        points.extend((x, y))
-
-    if len(points) == 2:
-        points.extend(points)
+        points.append(coord_center(frame.coordinate, cell_size, padding))
     return points
 
 
-def update_marker_position(
-    canvas: tk.Canvas,
-    marker_id: int,
-    coord: Coordinate,
-    cell_size: int,
-    padding: int,
-) -> None:
-    """Move o marcador amarelo para a posicao atual do agente."""
+class MapWidget(QGraphicsView):
+    """Exibe o mapa com terrenos, checkpoints, caminho e marcador animado."""
 
-    marker_radius = max(5, cell_size + 2)
-    center_x, center_y = coord_center(coord, cell_size, padding)
-    canvas.coords(
-        marker_id,
-        center_x - marker_radius,
-        center_y - marker_radius,
-        center_x + marker_radius,
-        center_y + marker_radius,
-    )
-    canvas.tag_raise(marker_id)
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        self._scene = QGraphicsScene(self)
+        self.setScene(self._scene)
+        self.setBackgroundBrush(QBrush(QColor(MAP_BACKGROUND)))
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
 
+        self._path_item: QGraphicsPathItem | None = None
+        self._marker_item: QGraphicsEllipseItem | None = None
+        self._cell_size = 5
+        self._padding = 18
 
-def center_on_coordinate(
-    canvas: tk.Canvas,
-    coord: Coordinate,
-    cell_size: int,
-    padding: int,
-) -> None:
-    """Centraliza o scroll da interface na coordenada atual da animacao."""
+    def draw_static_map(
+        self,
+        result: JourneyResult,
+        frames: tuple[AnimationFrame, ...],
+        cell_size: int,
+        padding: int,
+    ) -> None:
+        """Desenha a versao estatica do mapa antes da animacao comecar."""
 
-    canvas.update_idletasks()
-    center_x, center_y = coord_center(coord, cell_size, padding)
-    scroll_region = canvas.cget("scrollregion").split()
-    if len(scroll_region) != 4:
-        return
+        self._cell_size = cell_size
+        self._padding = padding
+        map_data = result.map_data
 
-    _, _, max_x, max_y = (float(value) for value in scroll_region)
-    canvas_width = max(1, canvas.winfo_width())
-    canvas_height = max(1, canvas.winfo_height())
-    x_fraction = max(0.0, min((center_x - canvas_width / 2) / max(1.0, max_x - canvas_width), 1.0))
-    y_fraction = max(0.0, min((center_y - canvas_height / 2) / max(1.0, max_y - canvas_height), 1.0))
-    canvas.xview_moveto(x_fraction)
-    canvas.yview_moveto(y_fraction)
+        img = QImage(map_data.width, map_data.height, QImage.Format.Format_RGB32)
+        terrain_colors = TERRAIN_COLORS.copy()
+        for symbol in result.config.checkpoint_order:
+            terrain_colors.setdefault(symbol, CHECKPOINT_COLOR)
+
+        for row, line in enumerate(map_data.grid):
+            for col, symbol in enumerate(line):
+                color = QColor(terrain_colors.get(symbol, BG_CARD))
+                img.setPixelColor(col, row, color)
+
+        scaled = img.scaled(
+            map_data.width * cell_size,
+            map_data.height * cell_size,
+            Qt.AspectRatioMode.IgnoreAspectRatio,
+            Qt.TransformationMode.FastTransformation,
+        )
+        pixmap_item = self._scene.addPixmap(QPixmap.fromImage(scaled))
+        pixmap_item.setPos(padding, padding)
+
+        for checkpoint, coord in map_data.checkpoints.items():
+            x1, y1, x2, y2 = coord_bounds(coord, cell_size, padding)
+            inset = max(1, cell_size // 3)
+            ellipse = self._scene.addEllipse(
+                x1 + inset,
+                y1 + inset,
+                (x2 - x1) - 2 * inset,
+                (y2 - y1) - 2 * inset,
+                QPen(QColor("#a03020"), 1),
+                QBrush(QColor(CHECKPOINT_COLOR)),
+            )
+            ellipse.setZValue(1)
+
+            text_item = self._scene.addText(checkpoint, QFont("Segoe UI", 7, QFont.Weight.Bold))
+            text_item.setDefaultTextColor(QColor("white"))
+            text_item.setPos(
+                (x1 + x2) / 2 - text_item.boundingRect().width() / 2,
+                (y1 + y2) / 2 - text_item.boundingRect().height() / 2,
+            )
+            text_item.setZValue(2)
+
+        start_x, start_y = coord_center(frames[0].coordinate, cell_size, padding)
+        path = QPainterPath()
+        path.moveTo(start_x, start_y)
+        pen = QPen(QColor(PATH_COLOR), max(2, cell_size - 1))
+        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
+        self._path_item = self._scene.addPath(path, pen)
+        self._path_item.setZValue(3)
+
+        marker_radius = max(5, cell_size + 2)
+        self._marker_item = self._scene.addEllipse(
+            -marker_radius,
+            -marker_radius,
+            marker_radius * 2,
+            marker_radius * 2,
+            QPen(QColor("white"), 2),
+            QBrush(QColor(MARKER_COLOR)),
+        )
+        self._marker_item.setZValue(4)
+        self._marker_item.setPos(start_x, start_y)
+
+        width = map_data.width * cell_size + padding * 2
+        height = map_data.height * cell_size + padding * 2
+        self._scene.setSceneRect(0, 0, width, height)
+
+    def update_path(self, points: list[tuple[float, float]]) -> None:
+        """Atualiza a linha do caminho percorrido no mapa."""
+
+        if self._path_item is None or len(points) < 2:
+            return
+        path = QPainterPath()
+        path.moveTo(points[0][0], points[0][1])
+        for x, y in points[1:]:
+            path.lineTo(x, y)
+        self._path_item.setPath(path)
+
+    def update_marker(self, coord: Coordinate) -> None:
+        """Move o marcador para a posicao atual do agente."""
+
+        if self._marker_item is None:
+            return
+        cx, cy = coord_center(coord, self._cell_size, self._padding)
+        self._marker_item.setPos(cx, cy)
+
+    def center_on_coord(self, coord: Coordinate) -> None:
+        """Centraliza a visualizacao na coordenada indicada."""
+
+        cx, cy = coord_center(coord, self._cell_size, self._padding)
+        self.centerOn(cx, cy)

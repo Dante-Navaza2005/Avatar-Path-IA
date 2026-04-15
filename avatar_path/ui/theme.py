@@ -2,24 +2,21 @@
 
 from __future__ import annotations
 
-import tkinter as tk
-from tkinter import ttk
 
-
-BG = "#1e1e2e"
-BG_SURFACE = "#262637"
-BG_CARD = "#2e2e42"
-BG_CARD_HOVER = "#363650"
-TEXT_PRIMARY = "#e0e0f0"
-TEXT_SECONDARY = "#a0a0c0"
-ACCENT = "#7c9ff5"
-ACCENT_DIM = "#5a7ad4"
-PATH_COLOR = "#f07070"
-MARKER_COLOR = "#f5c842"
-CHECKPOINT_COLOR = "#e06040"
-SEPARATOR_COLOR = "#3a3a55"
-BORDER_COLOR = "#3a3a55"
-MAP_BACKGROUND = "#1a1a2a"
+BG = "#1a1a1a"
+BG_SURFACE = "#222222"
+BG_CARD = "#252525"
+BG_CARD_HOVER = "#2e2e2e"
+TEXT_PRIMARY = "#d8d8d8"
+TEXT_SECONDARY = "#808080"
+ACCENT = "#5c9ece"
+ACCENT_DIM = "#4a7fa8"
+PATH_COLOR = "#e06050"
+MARKER_COLOR = "#e8b830"
+CHECKPOINT_COLOR = "#d05838"
+SEPARATOR_COLOR = "#333333"
+BORDER_COLOR = "#333333"
+MAP_BACKGROUND = "#181818"
 TERRAIN_LEGEND_ORDER = (".", "R", "F", "A", "M")
 
 TERRAIN_COLORS = {
@@ -41,121 +38,121 @@ TERRAIN_LABELS = {
 }
 
 
-def configure_style(root: tk.Misc) -> None:
-    """Aplica um tema unico para evitar cores e fontes espalhadas pela GUI."""
+def build_stylesheet() -> str:
+    """Retorna o stylesheet Qt global para a interface minimalista."""
 
-    style = ttk.Style(root)
-    try:
-        style.theme_use("clam")
-    except tk.TclError:
-        pass
-
-    style.configure("App.TFrame", background=BG)
-    style.configure("Card.TFrame", background=BG_CARD)
-    style.configure(
-        "Panel.TLabelframe",
-        background=BG_CARD,
-        foreground=TEXT_SECONDARY,
-        bordercolor=BORDER_COLOR,
-        darkcolor=BORDER_COLOR,
-        lightcolor=BORDER_COLOR,
-    )
-    style.configure(
-        "Panel.TLabelframe.Label",
-        background=BG_CARD,
-        foreground=ACCENT,
-        font=("Segoe UI", 10, "bold"),
-    )
-    style.configure(
-        "Header.TLabel",
-        background=BG,
-        foreground=TEXT_PRIMARY,
-        font=("Segoe UI", 22, "bold"),
-    )
-    style.configure(
-        "Subheader.TLabel",
-        background=BG,
-        foreground=TEXT_SECONDARY,
-        font=("Segoe UI", 10),
-    )
-    style.configure(
-        "MapTitle.TLabel",
-        background=BG_CARD,
-        foreground=ACCENT,
-        font=("Segoe UI", 11, "bold"),
-    )
-    style.configure(
-        "Body.TLabel",
-        background=BG_CARD,
-        foreground=TEXT_SECONDARY,
-        font=("Segoe UI", 10),
-    )
-    style.configure(
-        "Value.TLabel",
-        background=BG_CARD,
-        foreground=TEXT_PRIMARY,
-        font=("Segoe UI", 10),
-    )
-    style.configure(
-        "SectionTitle.TLabel",
-        background=BG_CARD,
-        foreground=ACCENT,
-        font=("Segoe UI", 9, "bold"),
-    )
-    style.configure(
-        "Legend.TLabel",
-        background=BG_CARD,
-        foreground=TEXT_SECONDARY,
-        font=("Segoe UI", 9),
-    )
-    style.configure(
-        "Accent.TButton",
-        background=ACCENT,
-        foreground="white",
-        font=("Segoe UI", 10, "bold"),
-        borderwidth=0,
-        focuscolor=ACCENT,
-    )
-    style.map(
-        "Accent.TButton",
-        background=[("active", ACCENT_DIM), ("pressed", ACCENT_DIM)],
-    )
-    style.configure(
-        "Secondary.TButton",
-        background=BG_CARD_HOVER,
-        foreground=TEXT_PRIMARY,
-        font=("Segoe UI", 10),
-        borderwidth=0,
-        focuscolor=BG_CARD_HOVER,
-    )
-    style.map(
-        "Secondary.TButton",
-        background=[("active", SEPARATOR_COLOR), ("pressed", SEPARATOR_COLOR)],
-    )
-    style.configure(
-        "Treeview",
-        background=BG_SURFACE,
-        fieldbackground=BG_SURFACE,
-        foreground=TEXT_PRIMARY,
-        rowheight=26,
-        borderwidth=0,
-        font=("Segoe UI", 9),
-    )
-    style.configure(
-        "Treeview.Heading",
-        background=BG_CARD,
-        foreground=ACCENT,
-        font=("Segoe UI", 9, "bold"),
-        borderwidth=0,
-    )
-    style.map(
-        "Treeview",
-        background=[("selected", ACCENT_DIM)],
-        foreground=[("selected", "white")],
-    )
-    style.configure(
-        "Horizontal.TScale",
-        background=BG_CARD,
-        troughcolor=BG_SURFACE,
-        borderwidth=0,
-    )
+    return f"""
+        QMainWindow, QWidget {{
+            background-color: {BG};
+            color: {TEXT_PRIMARY};
+            font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+            font-size: 13px;
+        }}
+        QGroupBox {{
+            background-color: {BG_CARD};
+            border: 1px solid {BORDER_COLOR};
+            border-radius: 6px;
+            margin-top: 14px;
+            padding: 14px 10px 10px 10px;
+            font-size: 11px;
+            font-weight: 600;
+            color: {TEXT_SECONDARY};
+        }}
+        QGroupBox::title {{
+            subcontrol-origin: margin;
+            subcontrol-position: top left;
+            padding: 0 6px;
+            color: {TEXT_SECONDARY};
+        }}
+        QPushButton {{
+            background-color: {BG_CARD};
+            color: {TEXT_PRIMARY};
+            border: 1px solid {BORDER_COLOR};
+            border-radius: 4px;
+            padding: 6px 14px;
+            font-size: 12px;
+        }}
+        QPushButton:hover {{
+            background-color: {BG_CARD_HOVER};
+        }}
+        QPushButton:pressed {{
+            background-color: {SEPARATOR_COLOR};
+        }}
+        QSlider::groove:horizontal {{
+            height: 4px;
+            background: {BG_SURFACE};
+            border-radius: 2px;
+        }}
+        QSlider::handle:horizontal {{
+            background: {TEXT_SECONDARY};
+            width: 14px;
+            height: 14px;
+            margin: -5px 0;
+            border-radius: 7px;
+        }}
+        QSlider::handle:horizontal:hover {{
+            background: {TEXT_PRIMARY};
+        }}
+        QTableWidget {{
+            background-color: {BG_SURFACE};
+            border: 1px solid {BORDER_COLOR};
+            border-radius: 4px;
+            gridline-color: {BORDER_COLOR};
+            font-size: 11px;
+        }}
+        QTableWidget::item {{
+            padding: 4px 8px;
+            color: {TEXT_PRIMARY};
+        }}
+        QTableWidget::item:selected {{
+            background-color: {ACCENT_DIM};
+            color: white;
+        }}
+        QHeaderView::section {{
+            background-color: {BG_CARD};
+            color: {TEXT_SECONDARY};
+            font-weight: 600;
+            font-size: 11px;
+            border: none;
+            border-bottom: 1px solid {BORDER_COLOR};
+            padding: 6px 8px;
+        }}
+        QScrollBar:vertical {{
+            background: {BG};
+            width: 8px;
+            border: none;
+        }}
+        QScrollBar::handle:vertical {{
+            background: {SEPARATOR_COLOR};
+            border-radius: 4px;
+            min-height: 20px;
+        }}
+        QScrollBar::handle:vertical:hover {{
+            background: {TEXT_SECONDARY};
+        }}
+        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+            height: 0;
+        }}
+        QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{
+            background: none;
+        }}
+        QScrollBar:horizontal {{
+            background: {BG};
+            height: 8px;
+            border: none;
+        }}
+        QScrollBar::handle:horizontal {{
+            background: {SEPARATOR_COLOR};
+            border-radius: 4px;
+            min-width: 20px;
+        }}
+        QScrollBar::handle:horizontal:hover {{
+            background: {TEXT_SECONDARY};
+        }}
+        QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
+            width: 0;
+        }}
+        QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {{
+            background: none;
+        }}
+    """
