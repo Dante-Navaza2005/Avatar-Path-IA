@@ -28,17 +28,28 @@ Implementacao do trabalho `INF1771_IA_Trabalho_1_2026.1.pdf` usando:
 
 ## Como executar
 
-Crie um ambiente com Python 3.11+:
+### Configuração inicial
+
+Instale o `uv` (gerenciador de pacotes Python moderno):
 
 ```bash
-python -m venv .venv
+pip install uv
+```
+
+Crie um ambiente virtual com Python 3.11+ e instale as dependências:
+
+```bash
+uv venv
+uv sync
 ```
 
 Se quiser ativar o ambiente no PowerShell:
 
 ```bash
-.venv\Scripts\Activate.ps1
+.venv\Scripts\Activate.ps1 // ou apenas .venv\Scripts\Activate
 ```
+
+### Executando a aplicação
 
 Para rodar no terminal:
 
