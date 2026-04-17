@@ -7,7 +7,7 @@
 ## Integrantes
 
 - `Breno de Andrade Soares` - Matricula: `2320363`
-- `Dante` - Matricula: 2321406
+- `Dante Honorato Navaza` - Matricula: 2321406
 - `Rafael Soares Estevão` - Matricula: `2320470`
 
 Implementacao do trabalho `INF1771_IA_Trabalho_1_2026.1.pdf` usando:
@@ -15,6 +15,24 @@ Implementacao do trabalho `INF1771_IA_Trabalho_1_2026.1.pdf` usando:
 - `A*` para encontrar o menor custo entre checkpoints consecutivos no mapa.
 - `Algoritmo Genetico` para escolher a melhor combinacao de personagens em cada etapa, respeitando o limite de `8` usos por personagem.
 - `Interface grafica (GUI)` para acompanhar o deslocamento do agente no mapa.
+
+## Configurabilidade
+
+Tudo que o enunciado pede como configuravel esta em `config/default_config.json`:
+
+- caminho do mapa;
+- custo dos terrenos;
+- ordem dos checkpoints;
+- dificuldade das etapas;
+- agilidade e energia maxima dos personagens;
+
+## Resultado
+
+Com o mapa `Instrucoes/MAPA_LENDA-AANG.txt`:
+
+- custo total do A*: `2798.000000`
+- custo total da combinatoria: `1805.548602`
+- custo total final: `4603.548602`
 
 ## Estrutura
 
@@ -77,21 +95,3 @@ Para deixar o algoritmo genetico cacando a melhor seed e salvando tudo em CSV:
 ```bash
 python main.py --genetic-hunt
 ```
-
-## Configurabilidade
-
-Tudo que o enunciado pede como configuravel esta em `config/default_config.json`:
-
-- caminho do mapa;
-- custo dos terrenos;
-- ordem dos checkpoints;
-- dificuldade das etapas;
-- agilidade e energia maxima dos personagens;
-
-## Resultado
-
-Com o mapa `Instrucoes/MAPA_LENDA-AANG.txt`:
-
-- custo total do A*: `2798.000000`
-- custo total da combinatoria: `1805.548602`
-- custo total final: `4603.548602`
