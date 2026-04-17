@@ -20,6 +20,9 @@ Implementacao do trabalho `INF1771_IA_Trabalho_1_2026.1.pdf` usando:
 
 - `main.py`: ponto de entrada da aplicacao e configuracao dos modos de execucao.
 - `avatar_path/`: logica principal de planejamento, busca e carregamento do mapa.
+- `avatar_path/team_planner.py`: fachada da etapa combinatoria usada pelo restante da aplicacao.
+- `avatar_path/team_planner_meta.py`: nucleo do algoritmo genetico e seus parametros principais.
+- `avatar_path/team_planner_seed_hunt.py`: rotina de caça de seeds, CSV e configuracoes dessa busca.
 - `avatar_path/gui.py`: inicializacao da interface grafica.
 - `avatar_path/ui/`: componentes da GUI, incluindo tema, canvas do mapa e animacoes.
 - `config/default_config.json`: mapa, custos de terreno, ordem das etapas, dificuldades e agilidade dos personagens.
@@ -50,11 +53,18 @@ Se quiser ativar o ambiente no PowerShell:
 
 ### Executando a aplicação
 
-Para rodar no terminal:
+Para rodar a jornada completa no terminal:
 
 ```bash
 python main.py
 ```
+
+Para rodar apenas o A*:
+
+```bash
+python main.py --search
+```
+
 
 Para abrir a interface grafica:
 
@@ -62,16 +72,10 @@ Para abrir a interface grafica:
 python main.py --gui
 ```
 
-Para comparar `A*`, `Dijkstra` e `Greedy` antes da execucao:
+Para deixar o algoritmo genetico cacando a melhor seed e salvando tudo em CSV:
 
 ```bash
-python main.py --compare-search
-```
-
-Para escolher automaticamente o melhor algoritmo entre os disponiveis no mapa atual:
-
-```bash
-python main.py --search auto
+python main.py --genetic-hunt
 ```
 
 ## Configurabilidade

@@ -7,8 +7,6 @@ Este modulo junta as duas partes principais do trabalho:
 
 from __future__ import annotations
 
-from time import perf_counter
-
 from avatar_path.domain import JourneyConfig, JourneyResult, MapData, SegmentResult, StageAssignment
 from avatar_path.map_loader import load_map
 from avatar_path.pathfinding import find_path
@@ -21,12 +19,10 @@ class JourneyPlanner:
     def __init__(
         self,
         config: JourneyConfig,
-        search_algorithm: str = "astar",
     ) -> None:
-        """Guarda a configuracao e o algoritmo usado entre checkpoints."""
+        """Guarda a configuracao usada na jornada."""
 
         self.config = config
-        self.search_algorithm = search_algorithm
 
     def solve(self) -> JourneyResult:
         """Resolve a jornada inteira, do checkpoint inicial ate o final.
@@ -40,60 +36,10 @@ class JourneyPlanner:
         return _build_journey_result(
             config=self.config,
             map_data=map_data,
-            search_algorithm=self.search_algorithm,
             assignments=assignments,
             energy_usage=energy_usage,
             stage_cost=stage_cost,
         )
-
-
-def compare_search_algorithms(
-    config: JourneyConfig,
-    algorithms: tuple[str, ...] = ("astar", "dijkstra", "greedy"),
-) -> tuple[dict[str, float | int | str], ...]:
-    """Compara os algoritmos de busca usando a mesma distribuicao de equipes.
-
-    Assim a comparacao fica justa: muda apenas o algoritmo do mapa, enquanto a
-    parte combinatoria permanece igual para todos os casos.
-    """
-
-    map_data = load_map(config)
-    assignments, energy_usage, stage_cost = _optimize_teams(config)
-
-    results: list[dict[str, float | int | str]] = []
-    for algorithm in algorithms:
-        start_time = perf_counter()
-        result = _build_journey_result(
-            config=config,
-            map_data=map_data,
-            search_algorithm=algorithm,
-            assignments=assignments,
-            energy_usage=energy_usage,
-            stage_cost=stage_cost,
-        )
-        elapsed_ms = (perf_counter() - start_time) * 1000.0
-        results.append(
-            {
-                "algorithm": algorithm,
-                "movement_cost": result.movement_cost,
-                "stage_cost": round(stage_cost, 6),
-                "total_cost": round(result.movement_cost + stage_cost, 6),
-                "nodes_expanded": sum(segment.nodes_expanded for segment in result.segments),
-                "elapsed_ms": round(elapsed_ms, 6),
-            }
-        )
-
-    return tuple(
-        sorted(
-            results,
-            key=lambda item: (
-                item["total_cost"],
-                0 if item["algorithm"] == "astar" else 1,
-                item["nodes_expanded"],
-                item["elapsed_ms"],
-            ),
-        )
-    )
 
 
 def _optimize_teams(
@@ -112,7 +58,6 @@ def _optimize_teams(
 def _build_journey_result(
     config: JourneyConfig,
     map_data: MapData,
-    search_algorithm: str,
     assignments: tuple[StageAssignment, ...],
     energy_usage: dict[str, int],
     stage_cost: float,
@@ -145,7 +90,7 @@ def _build_journey_result(
             map_data=map_data,
             start=start,
             goal=goal,
-            algorithm=search_algorithm,
+            algorithm="astar",
             blocked=blocked,
         )
 

@@ -5,7 +5,8 @@ import argparse
 from avatar_path.config import load_config
 from avatar_path.domain import JourneyResult
 from avatar_path.formatting import format_cost
-from avatar_path.planner import JourneyPlanner, compare_search_algorithms
+from avatar_path.planner import JourneyPlanner
+from avatar_path.team_planner import TeamPlanner
 
 
 def build_argument_parser() -> argparse.ArgumentParser:
@@ -24,39 +25,25 @@ def build_argument_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--search",
-        choices=("auto", "astar", "dijkstra", "greedy"),
-        default="astar",
-        help="Algoritmo de busca para os trajetos entre checkpoints.",
+        action="store_true",
+        help="Executa a busca padrao com A*.",
     )
     parser.add_argument(
-        "--compare-search",
+        "--genetic-hunt",
         action="store_true",
-        help="Compara A*, Dijkstra e Greedy no mapa atual antes de executar.",
+        help="Caca a melhor seed do algoritmo genetico e salva os resultados em CSV.",
     )
     return parser
 
 
-def print_search_comparison(comparison: tuple[dict[str, float | int | str], ...]) -> None:
-    print("Comparacao de algoritmos de busca")
-    for item in comparison:
-        print(
-            f"- {item['algorithm']}: "
-            f"movimento={format_cost(item['movement_cost'])}, "
-            f"total={format_cost(item['total_cost'])}, "
-            f"nos={item['nodes_expanded']}, "
-            f"tempo={format_cost(item['elapsed_ms'])}ms"
-        )
-    print()
-
-
-def print_summary(result: JourneyResult, algorithm: str) -> None:
+def print_summary(result: JourneyResult) -> None:
     max_energy_by_name = {
         character.name: character.max_energy
         for character in result.config.characters
     }
 
     print("Resumo da jornada")
-    print(f"Algoritmo de busca usado: {algorithm}")
+    print("Algoritmo de busca usado: A*")
     print(f"Trechos planejados: {len(result.segments)}")
     print(f"Custo total de movimento: {format_cost(result.movement_cost)}")
     print(f"Custo total das etapas: {format_cost(result.stage_cost)}")
@@ -87,25 +74,25 @@ def print_summary(result: JourneyResult, algorithm: str) -> None:
         )
 
 
+def print_search_value(result: JourneyResult) -> None:
+    print(format_cost(result.movement_cost))
+
+
 def main() -> None:
     parser = build_argument_parser()
     args = parser.parse_args()
 
     config = load_config(args.config)
-    selected_algorithm = args.search
-    comparison: tuple[dict[str, float | int | str], ...] = tuple()
 
-    if args.search == "auto" or args.compare_search:
-        comparison = compare_search_algorithms(config)
-        selected_algorithm = str(comparison[0]["algorithm"])
+    if args.genetic_hunt:
+        TeamPlanner(
+            config.characters,
+            config.checkpoint_order[1:],
+            config.stage_difficulties,
+        ).hunt_best_seed()
+        return
 
-    if args.compare_search:
-        print_search_comparison(comparison)
-
-    result = JourneyPlanner(
-        config,
-        search_algorithm=selected_algorithm,
-    ).solve()
+    result = JourneyPlanner(config).solve()
 
     if args.gui:
         from avatar_path.gui import launch_gui
@@ -116,7 +103,11 @@ def main() -> None:
             raise SystemExit(f"Falha ao abrir a interface grafica: {exc}") from exc
         return
 
-    print_summary(result, selected_algorithm)
+    if args.search:
+        print_search_value(result)
+        return
+
+    print_summary(result)
 
 
 if __name__ == "__main__":
