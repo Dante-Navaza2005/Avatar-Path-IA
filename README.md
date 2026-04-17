@@ -1,56 +1,81 @@
 # Avatar Path IA
 
+## Video da apresentacao
+
+- Link do video: `inserir_link_aqui`
+
+## Integrantes
+
+- `Breno de Andrade Soares` - Matricula: `2320363`
+- `Dante` - Matricula: `XXXXXXXXX`
+- `Rafael Soares Estevão` - Matricula: `2320470`
+
 Implementacao do trabalho `INF1771_IA_Trabalho_1_2026.1.pdf` usando:
 
 - `A*` para encontrar o menor custo entre checkpoints consecutivos no mapa.
-- otimizacao inteira exata para escolher a melhor combinacao de personagens em cada etapa, respeitando o limite de `8` usos por personagem.
-- visualizacao simples no terminal para acompanhar o deslocamento do agente.
+- `Algoritmo Genetico` para escolher a melhor combinacao de personagens em cada etapa, respeitando o limite de `8` usos por personagem.
+- `Interface grafica (GUI)` para acompanhar o deslocamento do agente no mapa.
 
 ## Estrutura
 
-- `main.py`: ponto de entrada da aplicacao.
-- `avatar_path/`: codigo-fonte principal.
+- `main.py`: ponto de entrada da aplicacao e configuracao dos modos de execucao.
+- `avatar_path/`: logica principal de planejamento, busca e carregamento do mapa.
+- `avatar_path/team_planner.py`: fachada da etapa combinatoria usada pelo restante da aplicacao.
+- `avatar_path/team_planner_meta.py`: nucleo do algoritmo genetico e seus parametros principais.
+- `avatar_path/team_planner_seed_hunt.py`: rotina de caça de seeds, CSV e configuracoes dessa busca.
+- `avatar_path/gui.py`: inicializacao da interface grafica.
+- `avatar_path/ui/`: componentes da GUI, incluindo tema, canvas do mapa e animacoes.
 - `config/default_config.json`: mapa, custos de terreno, ordem das etapas, dificuldades e agilidade dos personagens.
 - `Instrucoes/`: PDF do enunciado e mapa fornecidos.
 
 ## Como executar
 
-Crie um ambiente com Python 3.11+ e instale a dependencia:
+### Configuração inicial
+
+Instale o `uv` (gerenciador de pacotes Python moderno):
 
 ```bash
-python3 -m pip install -r requirements.txt
+pip install uv
 ```
 
-Se o seu Python for o `python@3.14` do Homebrew e a GUI reclamar de `_tkinter`, instale o suporte ao Tk:
+Crie um ambiente virtual com Python 3.11+ e instale as dependências:
 
 ```bash
-brew install python-tk@3.14
+uv venv
+uv sync
 ```
 
-Rode a solucao padrao:
+Se quiser ativar o ambiente no PowerShell:
 
 ```bash
-python3 main.py
+.venv\Scripts\Activate.ps1 // ou apenas .venv\Scripts\Activate
 ```
 
-O modo padrao mantem a ordem fixa dos checkpoints do enunciado.
+### Executando a aplicação
 
-Para ver a comparacao explicitamente:
+Para rodar a jornada completa no terminal:
 
 ```bash
-python3 main.py --compare-search
+python main.py
 ```
+
+Para rodar apenas o A*:
+
+```bash
+python main.py --search
+```
+
 
 Para abrir a interface grafica:
 
 ```bash
-python3 main.py --gui
+python main.py --gui
 ```
 
-Para visualizar os movimentos no terminal:
+Para deixar o algoritmo genetico cacando a melhor seed e salvando tudo em CSV:
 
 ```bash
-python3 main.py --animate
+python main.py --genetic-hunt
 ```
 
 ## Configurabilidade
@@ -62,18 +87,11 @@ Tudo que o enunciado pede como configuravel esta em `config/default_config.json`
 - ordem dos checkpoints;
 - dificuldade das etapas;
 - agilidade e energia maxima dos personagens;
-- parametros da visualizacao.
 
 ## Resultado
 
 Com o mapa `Instrucoes/MAPA_LENDA-AANG.txt`:
 
-- custo total do A*: `1806`
-- custo total da combinatoria: `1805.5486`
-- custo total final: `3611.5486`
-
-## Testes
-
-```bash
-python3 -m unittest discover -s tests
-```
+- custo total do A*: `2798.000000`
+- custo total da combinatoria: `1805.548602`
+- custo total final: `4603.548602`
