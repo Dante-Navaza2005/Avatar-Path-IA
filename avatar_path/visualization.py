@@ -1,6 +1,9 @@
-"""Atalho para os recursos de animacao da jornada."""
+"""Atalho para os recursos de animacao da jornada.
 
-from avatar_path.ui.animation import animate_journey, build_animation_frames
+Centraliza as importacoes da animacao para manter a API do pacote mais limpa.
+"""
+
+from avatar_path.ui.animation import build_animation_frames
 
 
-__all__ = ["animate_journey", "build_animation_frames"]
+__all__ = ["build_animation_frames"]

@@ -1,4 +1,9 @@
-"""Planejamento completo da jornada combinando busca no mapa e equipes."""
+"""Planejamento completo da jornada combinando busca no mapa e equipes.
+
+Este modulo junta as duas partes principais do trabalho:
+- encontrar o caminho entre checkpoints;
+- escolher quais personagens cumprem cada etapa.
+"""
 
 from __future__ import annotations
 
@@ -11,7 +16,7 @@ from avatar_path.team_planner import TeamPlanner
 
 
 class JourneyPlanner:
-    """Coordena as duas partes do trabalho: caminho no mapa e combinatoria das etapas."""
+    """Coordena as duas partes do trabalho: mapa e combinatoria das etapas."""
 
     def __init__(
         self,
@@ -24,7 +29,11 @@ class JourneyPlanner:
         self.search_algorithm = search_algorithm
 
     def solve(self) -> JourneyResult:
-        """Resolve a jornada inteira do Avatar, do checkpoint inicial ate o final."""
+        """Resolve a jornada inteira, do checkpoint inicial ate o final.
+
+        A ideia aqui e separar o problema em duas etapas do enunciado:
+        primeiro escolhemos as equipes; depois calculamos cada deslocamento.
+        """
 
         map_data = load_map(self.config)
         assignments, energy_usage, stage_cost = _optimize_teams(self.config)
@@ -42,7 +51,11 @@ def compare_search_algorithms(
     config: JourneyConfig,
     algorithms: tuple[str, ...] = ("astar", "dijkstra", "greedy"),
 ) -> tuple[dict[str, float | int | str], ...]:
-    """Compara os algoritmos de busca de caminho com a mesma combinatoria de equipes."""
+    """Compara os algoritmos de busca usando a mesma distribuicao de equipes.
+
+    Assim a comparacao fica justa: muda apenas o algoritmo do mapa, enquanto a
+    parte combinatoria permanece igual para todos os casos.
+    """
 
     map_data = load_map(config)
     assignments, energy_usage, stage_cost = _optimize_teams(config)
@@ -86,7 +99,7 @@ def compare_search_algorithms(
 def _optimize_teams(
     config: JourneyConfig,
 ) -> tuple[tuple[StageAssignment, ...], dict[str, int], float]:
-    """Resolve apenas a parte combinatoria do enunciado para as etapas com dificuldade."""
+    """Resolve apenas a parte combinatoria para as etapas com dificuldade."""
 
     team_planner = TeamPlanner(
         characters=config.characters,
@@ -104,7 +117,11 @@ def _build_journey_result(
     energy_usage: dict[str, int],
     stage_cost: float,
 ) -> JourneyResult:
-    """Monta o resultado completo, trecho a trecho, da jornada do trabalho."""
+    """Monta o resultado completo trecho a trecho.
+
+    Esta funcao transforma a resposta das duas etapas do trabalho em um unico
+    objeto final, com custos acumulados que facilitam testes e visualizacao.
+    """
 
     assignment_by_symbol = {
         assignment.stage_symbol: assignment
@@ -119,6 +136,9 @@ def _build_journey_result(
     ):
         start = map_data.checkpoints[start_symbol]
         goal = map_data.checkpoints[end_symbol]
+
+        # Checkpoints futuros podem ser tratados como bloqueados para evitar
+        # atalhos que pulam a ordem exigida pela jornada.
         blocked = _blocked_future_checkpoints(config, map_data, segment_index)
 
         path, segment_movement_cost, nodes_expanded = find_path(
@@ -165,7 +185,7 @@ def _blocked_future_checkpoints(
     map_data: MapData,
     segment_index: int,
 ) -> frozenset[tuple[int, int]]:
-    """Bloqueia checkpoints futuros para evitar atalhos que quebrem a ordem da jornada."""
+    """Bloqueia checkpoints futuros para preservar a ordem da jornada."""
 
     if not config.block_future_checkpoints:
         return frozenset()

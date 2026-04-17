@@ -1,4 +1,8 @@
-"""Interface grafica para visualizar a jornada resolvida pelo programa."""
+"""Interface grafica para visualizar a jornada resolvida pelo programa.
+
+Esta janela existe para apresentar, de forma didatica, o caminho encontrado no
+mapa e os custos acumulados de cada etapa da jornada.
+"""
 
 from __future__ import annotations
 
@@ -46,7 +50,7 @@ from avatar_path.ui.theme import (
 
 
 class JourneyGUI(QMainWindow):
-    """Mostra, em uma janela, o mapa, os custos e a execucao da jornada."""
+    """Mostra em uma janela o mapa, os custos e a execucao da jornada."""
 
     def __init__(self, result: JourneyResult) -> None:
         """Prepara os widgets que exibem a solucao do trabalho em tempo real."""
@@ -124,8 +128,7 @@ class JourneyGUI(QMainWindow):
         layout.addWidget(title)
 
         subtitle = QLabel(
-            "A* no mapa  \u00b7  Algoritmo Genetico + Hill Climbing"
-            " + Simulated Annealing nas equipes"
+            "A* no mapa  \u00b7  Algoritmo Genetico na escolha das equipes"
         )
         subtitle.setStyleSheet(f"font-size: 11px; color: {TEXT_SECONDARY}; margin-bottom: 2px;")
         layout.addWidget(subtitle)

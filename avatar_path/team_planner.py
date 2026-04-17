@@ -1,4 +1,8 @@
-"""Fachada publica da etapa combinatoria de escolha de equipes."""
+"""Fachada publica da etapa combinatoria de escolha de equipes.
+
+Este modulo deixa a logica de equipes com uma interface pequena e facil de
+usar pelo planejador principal.
+"""
 
 from __future__ import annotations
 
@@ -17,7 +21,7 @@ class TeamPlanner:
         stage_difficulties: dict[str, int],
         reserved_final_energy: int = 0,
     ) -> None:
-        """Monta o estado fixo da combinatoria antes de executar as metaheuristicas."""
+        """Prepara o estado fixo da parte combinatoria do trabalho."""
 
         self.state = build_team_planner_state(
             characters=characters,
@@ -33,7 +37,11 @@ class TeamPlanner:
         return self.state.stage_symbols
 
     def optimize(self) -> PlannerSolution:
-        """Procura uma boa distribuicao de equipes respeitando a energia maxima."""
+        """Procura uma distribuicao de equipes respeitando a energia maxima.
+
+        O objetivo e minimizar o tempo total das etapas sem ultrapassar o
+        limite de uso de cada personagem.
+        """
 
         return optimize_with_genetic_algorithm(self.state)
 

@@ -6,7 +6,6 @@ from avatar_path.config import load_config
 from avatar_path.domain import JourneyResult
 from avatar_path.formatting import format_cost
 from avatar_path.planner import JourneyPlanner, compare_search_algorithms
-from avatar_path.visualization import animate_journey
 
 
 def build_argument_parser() -> argparse.ArgumentParser:
@@ -17,11 +16,6 @@ def build_argument_parser() -> argparse.ArgumentParser:
         "--config",
         default="config/default_config.json",
         help="Caminho para o arquivo JSON de configuracao.",
-    )
-    parser.add_argument(
-        "--animate",
-        action="store_true",
-        help="Exibe uma animacao simples dos movimentos no terminal.",
     )
     parser.add_argument(
         "--gui",
@@ -123,9 +117,6 @@ def main() -> None:
         return
 
     print_summary(result, selected_algorithm)
-
-    if args.animate:
-        animate_journey(result, config.visualization)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,8 @@
-"""Preparacao dos dados usados pela etapa combinatoria do trabalho."""
+"""Preparacao dos dados usados pela etapa combinatoria do trabalho.
+
+O objetivo deste modulo e deixar pronta toda a informacao fixa da parte de
+equipes, para que o algoritmo genetico trabalhe apenas com escolhas.
+"""
 
 from __future__ import annotations
 
@@ -12,7 +16,11 @@ PlannerSolution = tuple[tuple[StageAssignment, ...], dict[str, int], float]
 
 @dataclass(frozen=True)
 class TeamPlannerState:
-    """Guarda os dados prontos para escolher equipes para cada etapa do enunciado."""
+    """Guarda os dados fixos usados para montar equipes em cada etapa.
+
+    Esta estrutura evita recalcular nomes, indices, agilidades e somas de
+    subconjuntos toda vez que o algoritmo avalia uma solucao candidata.
+    """
 
     characters: tuple[CharacterConfig, ...]
     stage_symbols: tuple[str, ...]
@@ -26,7 +34,7 @@ class TeamPlannerState:
     agility_sum_by_mask: dict[int, int]
 
     def stage_time(self, stage_symbol: str, mask: int) -> float:
-        """Calcula o tempo de uma etapa usando a formula do enunciado."""
+        """Calcula o tempo da etapa com base na formula do enunciado."""
 
         difficulty = self.stage_difficulties[stage_symbol]
         return (difficulty * 10.0) / self.agility_sum_by_mask[mask]
@@ -34,14 +42,19 @@ class TeamPlannerState:
     def indices_in_mask(self, mask: int) -> tuple[int, ...]:
         """Traduz uma mascara de bits nos personagens escolhidos para a etapa."""
 
-        return tuple(
-            idx
-            for idx in range(len(self.characters))
-            if mask & (1 << idx)
-        )
+        indices: list[int] = []
+        for idx in range(len(self.characters)):
+            if mask & (1 << idx):
+                indices.append(idx)
+        return tuple(indices)
 
     def build_assignments(self, mask_by_symbol: dict[str, int]) -> PlannerSolution:
-        """Transforma mascaras de bits no formato final de resposta do trabalho."""
+        """Converte mascaras de bits na resposta final legivel do trabalho.
+
+        O algoritmo genetico trabalha com mascaras porque elas sao praticas
+        para combinar personagens. Aqui fazemos o caminho inverso para gerar
+        nomes, usos e custo total da solucao final.
+        """
 
         assignments: list[StageAssignment] = []
         usage = {name: 0 for name in self.names}
@@ -64,20 +77,6 @@ class TeamPlannerState:
         total_cost = sum(assignment.time_cost for assignment in assignments)
         return tuple(assignments), usage, total_cost
 
-    def masks_from_assignments(
-        self,
-        assignments: tuple[StageAssignment, ...],
-    ) -> tuple[int, ...]:
-        """Converte a resposta legivel em mascaras para as metaheuristicas."""
-
-        masks: list[int] = []
-        for assignment in assignments:
-            mask = 0
-            for name in assignment.characters:
-                mask |= 1 << self.name_to_index[name]
-            masks.append(mask)
-        return tuple(masks)
-
     def usage_for_masks(self, masks: tuple[int, ...]) -> tuple[int, ...]:
         """Conta quanta energia cada personagem gastou em uma solucao candidata."""
 
@@ -94,7 +93,13 @@ def build_team_planner_state(
     stage_difficulties: dict[str, int],
     reserved_final_energy: int = 0,
 ) -> TeamPlannerState:
-    """Prepara os dados fixos da combinatoria antes de rodar as buscas locais."""
+    """Prepara os dados fixos da combinatoria antes da otimizacao.
+
+    Esta funcao separa a parte estatica do problema:
+    - quais etapas tem dificuldade;
+    - quantas vezes cada personagem pode atuar;
+    - qual e a soma de agilidade de cada subconjunto possivel.
+    """
 
     stage_symbols = tuple(
         symbol
@@ -104,8 +109,8 @@ def build_team_planner_state(
     names = tuple(character.name for character in characters)
     max_energies = tuple(character.max_energy for character in characters)
 
-    # Trabalhar com as agilidades multiplicadas por 10 evita ruido de ponto flutuante
-    # e mantem exatamente a mesma escala usada no enunciado.
+    # Multiplicar a agilidade por 10 evita ruido de ponto flutuante e preserva
+    # a escala usada na formula do enunciado.
     agility_units = tuple(round(character.agility * 10) for character in characters)
     usable_energy_budget = sum(max_energies) - reserved_final_energy
 
@@ -133,16 +138,20 @@ def build_team_planner_state(
 
 
 def _build_agility_sums(agility_units: tuple[int, ...]) -> dict[int, int]:
-    """Precalcula a soma das agilidades para todos os subconjuntos possiveis."""
+    """Precalcula a soma de agilidade de todos os subconjuntos possiveis.
+
+    Como o numero de personagens e pequeno, vale a pena montar essa tabela uma
+    unica vez e reutiliza-la ao longo de toda a busca.
+    """
 
     agility_sum_by_mask: dict[int, int] = {0: 0}
     total_masks = 1 << len(agility_units)
 
     for mask in range(1, total_masks):
-        agility_sum_by_mask[mask] = sum(
-            agility_units[idx]
-            for idx in range(len(agility_units))
-            if mask & (1 << idx)
-        )
+        agility_sum = 0
+        for idx in range(len(agility_units)):
+            if mask & (1 << idx):
+                agility_sum += agility_units[idx]
+        agility_sum_by_mask[mask] = agility_sum
 
     return agility_sum_by_mask

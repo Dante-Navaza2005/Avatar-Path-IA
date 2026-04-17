@@ -1,4 +1,8 @@
-"""Leitura e validacao do mapa configuravel pedido pelo trabalho."""
+"""Leitura e validacao do mapa configuravel pedido pelo trabalho.
+
+O papel deste modulo e garantir que o programa so comece a planejar a jornada
+se o mapa obedecer ao formato esperado no enunciado.
+"""
 
 from __future__ import annotations
 
@@ -6,7 +10,11 @@ from avatar_path.domain import JourneyConfig, MapData
 
 
 def load_map(config: JourneyConfig) -> MapData:
-    """Le a matriz do mapa, valida dimensoes e localiza os checkpoints da jornada."""
+    """Carrega o mapa, valida o formato e encontra todos os checkpoints.
+
+    Esta funcao resolve a parte do enunciado em que o mapa precisa ser
+    configuravel e confiavel antes da execucao do A*.
+    """
 
     lines = config.map_path.read_text(encoding="utf-8").splitlines()
     if len(lines) != config.expected_height:
@@ -20,6 +28,8 @@ def load_map(config: JourneyConfig) -> MapData:
             f"Mapa invalido: esperado {config.expected_width} colunas por linha, recebido {sorted(widths)}."
         )
 
+    # Os simbolos aceitos sao exatamente os terrenos configurados e os
+    # checkpoints informados na ordem da jornada.
     valid_symbols = set(config.terrain_costs) | set(config.checkpoint_order)
     checkpoints: dict[str, tuple[int, int]] = {}
 

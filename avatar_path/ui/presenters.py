@@ -1,4 +1,8 @@
-"""Funcoes que transformam o resultado da jornada em textos para a GUI."""
+"""Funcoes que transformam o resultado da jornada em textos para a GUI.
+
+Manter essas conversoes fora dos widgets deixa a interface mais simples e
+facil de ler em sala ou durante a apresentacao do trabalho.
+"""
 
 from __future__ import annotations
 
@@ -71,9 +75,8 @@ def team_text(segment: SegmentResult, frame: AnimationFrame) -> str:
 def energy_text(result: JourneyResult, frame: AnimationFrame) -> str:
     """Formata o consumo de energia dos personagens para a interface."""
 
-    parts = []
-    for character in result.config.characters:
-        parts.append(
-            f"{character.name} {frame.energy_usage[character.name]}/{character.max_energy}"
-        )
+    parts = [
+        f"{character.name} {frame.energy_usage[character.name]}/{character.max_energy}"
+        for character in result.config.characters
+    ]
     return " | ".join(parts)

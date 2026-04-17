@@ -1,4 +1,8 @@
-"""Tema visual centralizado da interface grafica do trabalho."""
+"""Tema visual centralizado da interface grafica do trabalho.
+
+Concentrar cores e estilos aqui deixa a GUI mais facil de ajustar sem misturar
+aparencia com a logica de exibicao.
+"""
 
 from __future__ import annotations
 
@@ -39,7 +43,7 @@ TERRAIN_LABELS = {
 
 
 def build_stylesheet() -> str:
-    """Retorna o stylesheet Qt global para a interface minimalista."""
+    """Retorna o stylesheet Qt global usado pela interface do trabalho."""
 
     return f"""
         QMainWindow, QWidget {{

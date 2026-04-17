@@ -13,7 +13,7 @@
 Implementacao do trabalho `INF1771_IA_Trabalho_1_2026.1.pdf` usando:
 
 - `A*` para encontrar o menor custo entre checkpoints consecutivos no mapa.
-- `Algoritmo Genetico + Hill Climbing + Simulated Annealing` para escolher a melhor combinacao de personagens em cada etapa, respeitando o limite de `8` usos por personagem.
+- `Algoritmo Genetico` para escolher a melhor combinacao de personagens em cada etapa, respeitando o limite de `8` usos por personagem.
 - `Interface grafica (GUI)` para acompanhar o deslocamento do agente no mapa.
 
 ## Estrutura
@@ -22,7 +22,6 @@ Implementacao do trabalho `INF1771_IA_Trabalho_1_2026.1.pdf` usando:
 - `avatar_path/`: logica principal de planejamento, busca e carregamento do mapa.
 - `avatar_path/gui.py`: inicializacao da interface grafica.
 - `avatar_path/ui/`: componentes da GUI, incluindo tema, canvas do mapa e animacoes.
-- `avatar_path/visualization.py`: animacao simples no terminal.
 - `config/default_config.json`: mapa, custos de terreno, ordem das etapas, dificuldades e agilidade dos personagens.
 - `Instrucoes/`: PDF do enunciado e mapa fornecidos.
 
@@ -63,12 +62,6 @@ Para abrir a interface grafica:
 python main.py --gui
 ```
 
-Para visualizar os movimentos no terminal:
-
-```bash
-python main.py --animate
-```
-
 Para comparar `A*`, `Dijkstra` e `Greedy` antes da execucao:
 
 ```bash
@@ -90,7 +83,6 @@ Tudo que o enunciado pede como configuravel esta em `config/default_config.json`
 - ordem dos checkpoints;
 - dificuldade das etapas;
 - agilidade e energia maxima dos personagens;
-- parametros da visualizacao.
 
 ## Resultado
 

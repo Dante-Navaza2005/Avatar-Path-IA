@@ -1,4 +1,8 @@
-"""Desenho do mapa e do marcador animado na interface grafica."""
+"""Desenho do mapa e do marcador animado na interface grafica.
+
+Este modulo cuida apenas da traducao visual do mapa, sem misturar logica de
+planejamento com detalhes de pintura na tela.
+"""
 
 from __future__ import annotations
 
@@ -47,10 +51,10 @@ def build_path_points(
 ) -> list[tuple[float, float]]:
     """Converte o caminho percorrido ate um frame na lista de pontos da linha."""
 
-    points: list[tuple[float, float]] = []
-    for frame in frames[: frame_index + 1]:
-        points.append(coord_center(frame.coordinate, cell_size, padding))
-    return points
+    return [
+        coord_center(frame.coordinate, cell_size, padding)
+        for frame in frames[: frame_index + 1]
+    ]
 
 
 class MapWidget(QGraphicsView):
@@ -77,7 +81,11 @@ class MapWidget(QGraphicsView):
         cell_size: int,
         padding: int,
     ) -> None:
-        """Desenha a versao estatica do mapa antes da animacao comecar."""
+        """Desenha a versao estatica do mapa antes da animacao comecar.
+
+        Esta etapa pinta os terrenos uma unica vez e deixa separados os itens
+        dinamicos que serao atualizados durante a animacao.
+        """
 
         self._cell_size = cell_size
         self._padding = padding

@@ -1,4 +1,9 @@
-"""Implementacao dos algoritmos de busca usados entre checkpoints do trabalho."""
+"""Implementacao dos algoritmos de busca usados entre checkpoints do trabalho.
+
+O enunciado pede que a jornada seja percorrida entre checkpoints sucessivos.
+Este modulo resolve cada trecho isoladamente usando A*, Dijkstra ou busca
+gulosa, todos sobre o mesmo mapa ortogonal.
+"""
 
 from __future__ import annotations
 
@@ -11,7 +16,11 @@ NEIGHBOR_DELTAS = ((-1, 0), (1, 0), (0, -1), (0, 1))
 
 
 def manhattan_distance(a: Coordinate, b: Coordinate) -> int:
-    """Calcula a heuristica Manhattan usada pelo A* no mapa ortogonal do enunciado."""
+    """Calcula a distancia Manhattan usada como heuristica no mapa.
+
+    Como o agente so pode andar para cima, baixo, esquerda e direita, essa
+    distancia fornece uma estimativa simples e didatica para o A*.
+    """
 
     return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
@@ -20,7 +29,7 @@ def reconstruct_path(
     came_from: dict[Coordinate, Coordinate],
     goal: Coordinate,
 ) -> tuple[Coordinate, ...]:
-    """Reconstrui o caminho encontrado pelo algoritmo de busca."""
+    """Reconstrui o caminho final a partir dos predecessores registrados."""
 
     path = [goal]
     current = goal
@@ -31,20 +40,24 @@ def reconstruct_path(
     return tuple(path)
 
 
-def _priority_for_search(mode: str, movement_cost: int, heuristic_cost: int) -> int:
-    """Escolhe a prioridade correta para A*, Dijkstra ou Greedy."""
+def _priority_for_search(algorithm: str, movement_cost: int, heuristic_cost: int) -> int:
+    """Escolhe a prioridade da fila conforme o algoritmo selecionado.
 
-    if mode == "astar":
+    Todos os algoritmos usam a mesma estrutura de busca. O que muda e apenas
+    a regra usada para ordenar a fila de prioridade.
+    """
+
+    if algorithm == "astar":
         return movement_cost + heuristic_cost
-    if mode == "dijkstra":
+    if algorithm == "dijkstra":
         return movement_cost
-    if mode == "greedy":
+    if algorithm == "greedy":
         return heuristic_cost
-    raise ValueError(f"Algoritmo de busca desconhecido: {mode}.")
+    raise ValueError(f"Algoritmo de busca desconhecido: {algorithm}.")
 
 
 def _neighbor_coordinates(map_data: MapData, coord: Coordinate) -> tuple[Coordinate, ...]:
-    """Lista os vizinhos validos, sem diagonal, como pede o enunciado."""
+    """Lista os vizinhos validos sem diagonais, como pede o enunciado."""
 
     row, col = coord
     neighbors: list[Coordinate] = []
@@ -62,7 +75,12 @@ def _best_first_search(
     priority_mode: str,
     blocked: frozenset[Coordinate] = frozenset(),
 ) -> tuple[tuple[Coordinate, ...], int, int]:
-    """Executa uma busca com fila de prioridade para ligar dois checkpoints."""
+    """Executa a busca de um trecho usando fila de prioridade.
+
+    Esta funcao concentra a parte comum entre A*, Dijkstra e Gulosa:
+    expandir vizinhos, acumular custo e parar quando o checkpoint final
+    daquele trecho for alcancado.
+    """
 
     heuristic_factor = map_data.minimum_step_cost
     frontier: list[tuple[int, int, Coordinate]] = [
@@ -86,6 +104,7 @@ def _best_first_search(
         if current_cost != best_cost.get(current):
             continue
 
+        # A busca gulosa pode reenfileirar o mesmo no com prioridade melhor.
         if priority_mode != "greedy":
             if current in closed:
                 continue
@@ -118,7 +137,7 @@ def astar_shortest_path(
     goal: Coordinate,
     blocked: frozenset[Coordinate] = frozenset(),
 ) -> tuple[tuple[Coordinate, ...], int, int]:
-    """Resolve um trecho com A*, algoritmo principal pedido pelo enunciado."""
+    """Resolve um trecho com A*, algoritmo principal pedido pelo trabalho."""
 
     return _best_first_search(map_data, start, goal, "astar", blocked)
 
@@ -129,7 +148,7 @@ def dijkstra_shortest_path(
     goal: Coordinate,
     blocked: frozenset[Coordinate] = frozenset(),
 ) -> tuple[tuple[Coordinate, ...], int, int]:
-    """Resolve um trecho com Dijkstra para comparacao com o A*."""
+    """Resolve um trecho com Dijkstra para comparacao com o A* do trabalho."""
 
     return _best_first_search(map_data, start, goal, "dijkstra", blocked)
 
@@ -152,7 +171,7 @@ def find_path(
     algorithm: str = "astar",
     blocked: frozenset[Coordinate] = frozenset(),
 ) -> tuple[tuple[Coordinate, ...], int, int]:
-    """Despacha o algoritmo de busca escolhido para um trecho da jornada."""
+    """Escolhe qual busca sera usada para um trecho da jornada."""
 
     if algorithm == "astar":
         return astar_shortest_path(map_data, start, goal, blocked)
