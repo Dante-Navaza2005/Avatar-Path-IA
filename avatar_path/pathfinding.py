@@ -1,8 +1,8 @@
-"""Implementacao dos algoritmos de busca usados entre checkpoints do trabalho.
+"""Implementacao do A* usado entre checkpoints do trabalho.
 
 O enunciado pede que a jornada seja percorrida entre checkpoints sucessivos.
-Este modulo resolve cada trecho isoladamente usando A*, Dijkstra ou busca
-gulosa, todos sobre o mesmo mapa ortogonal.
+Este modulo resolve cada trecho isoladamente com A* sobre o mesmo mapa
+ortogonal.
 """
 
 from __future__ import annotations
@@ -40,22 +40,6 @@ def reconstruct_path(
     return tuple(path)
 
 
-def _priority_for_search(algorithm: str, movement_cost: int, heuristic_cost: int) -> int:
-    """Escolhe a prioridade da fila conforme o algoritmo selecionado.
-
-    Todos os algoritmos usam a mesma estrutura de busca. O que muda e apenas
-    a regra usada para ordenar a fila de prioridade.
-    """
-
-    if algorithm == "astar":
-        return movement_cost + heuristic_cost
-    if algorithm == "dijkstra":
-        return movement_cost
-    if algorithm == "greedy":
-        return heuristic_cost
-    raise ValueError(f"Algoritmo de busca desconhecido: {algorithm}.")
-
-
 def _neighbor_coordinates(map_data: MapData, coord: Coordinate) -> tuple[Coordinate, ...]:
     """Lista os vizinhos validos sem diagonais, como pede o enunciado."""
 
@@ -68,28 +52,18 @@ def _neighbor_coordinates(map_data: MapData, coord: Coordinate) -> tuple[Coordin
     return tuple(neighbors)
 
 
-def _best_first_search(
+def find_path(
     map_data: MapData,
     start: Coordinate,
     goal: Coordinate,
-    priority_mode: str,
     blocked: frozenset[Coordinate] = frozenset(),
 ) -> tuple[tuple[Coordinate, ...], int, int]:
-    """Executa a busca de um trecho usando fila de prioridade.
-
-    Esta funcao concentra a parte comum entre A*, Dijkstra e Gulosa:
-    expandir vizinhos, acumular custo e parar quando o checkpoint final
-    daquele trecho for alcancado.
-    """
+    """Resolve um trecho com A* e devolve caminho, custo e expansoes."""
 
     heuristic_factor = map_data.minimum_step_cost
     frontier: list[tuple[int, int, Coordinate]] = [
         (
-            _priority_for_search(
-                priority_mode,
-                movement_cost=0,
-                heuristic_cost=manhattan_distance(start, goal) * heuristic_factor,
-            ),
+            manhattan_distance(start, goal) * heuristic_factor,
             0,
             start,
         )
@@ -104,11 +78,9 @@ def _best_first_search(
         if current_cost != best_cost.get(current):
             continue
 
-        # A busca gulosa pode reenfileirar o mesmo no com prioridade melhor.
-        if priority_mode != "greedy":
-            if current in closed:
-                continue
-            closed.add(current)
+        if current in closed:
+            continue
+        closed.add(current)
 
         expanded_nodes += 1
         if current == goal:
@@ -125,58 +97,7 @@ def _best_first_search(
             best_cost[neighbor] = next_cost
             came_from[neighbor] = current
             heuristic_cost = manhattan_distance(neighbor, goal) * heuristic_factor
-            priority = _priority_for_search(priority_mode, next_cost, heuristic_cost)
+            priority = next_cost + heuristic_cost
             heappush(frontier, (priority, next_cost, neighbor))
 
     raise ValueError(f"Nao existe caminho entre {start} e {goal}.")
-
-
-def astar_shortest_path(
-    map_data: MapData,
-    start: Coordinate,
-    goal: Coordinate,
-    blocked: frozenset[Coordinate] = frozenset(),
-) -> tuple[tuple[Coordinate, ...], int, int]:
-    """Resolve um trecho com A*, algoritmo principal pedido pelo trabalho."""
-
-    return _best_first_search(map_data, start, goal, "astar", blocked)
-
-
-def dijkstra_shortest_path(
-    map_data: MapData,
-    start: Coordinate,
-    goal: Coordinate,
-    blocked: frozenset[Coordinate] = frozenset(),
-) -> tuple[tuple[Coordinate, ...], int, int]:
-    """Resolve um trecho com Dijkstra para comparacao com o A* do trabalho."""
-
-    return _best_first_search(map_data, start, goal, "dijkstra", blocked)
-
-
-def greedy_best_first_search(
-    map_data: MapData,
-    start: Coordinate,
-    goal: Coordinate,
-    blocked: frozenset[Coordinate] = frozenset(),
-) -> tuple[tuple[Coordinate, ...], int, int]:
-    """Resolve um trecho com busca gulosa para fins de comparacao didatica."""
-
-    return _best_first_search(map_data, start, goal, "greedy", blocked)
-
-
-def find_path(
-    map_data: MapData,
-    start: Coordinate,
-    goal: Coordinate,
-    algorithm: str = "astar",
-    blocked: frozenset[Coordinate] = frozenset(),
-) -> tuple[tuple[Coordinate, ...], int, int]:
-    """Escolhe qual busca sera usada para um trecho da jornada."""
-
-    if algorithm == "astar":
-        return astar_shortest_path(map_data, start, goal, blocked)
-    if algorithm == "dijkstra":
-        return dijkstra_shortest_path(map_data, start, goal, blocked)
-    if algorithm == "greedy":
-        return greedy_best_first_search(map_data, start, goal, blocked)
-    raise ValueError(f"Algoritmo de busca desconhecido: {algorithm}.")

@@ -90,7 +90,6 @@ def _build_journey_result(
             map_data=map_data,
             start=start,
             goal=goal,
-            algorithm="astar",
             blocked=blocked,
         )
 
