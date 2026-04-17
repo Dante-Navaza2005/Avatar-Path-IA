@@ -2,9 +2,6 @@
 
 Segue a estrutura classica de um AG conforme apresentado em aula:
 populacao inicial -> avaliacao -> selecao -> crossover -> mutacao -> nova geracao.
-
-Como AGs sao estocasticos, o algoritmo roda varias vezes com seeds diferentes
-e retorna o melhor resultado encontrado.
 """
 
 from __future__ import annotations
@@ -32,11 +29,7 @@ BEST_SEED = 0
 def optimize_with_genetic_algorithm(
     state: TeamPlannerState,
 ) -> PlannerSolution:
-    """Resolve a combinatoria usando Algoritmo Genetico puro.
-
-    Roda o AG com a melhor seed conhecida. Se o resultado nao for satisfatorio,
-    a funcao find_best_seed pode ser usada para buscar uma seed melhor.
-    """
+    """Resolve a combinatoria usando Algoritmo Genetico puro."""
 
     best_candidate = _run_genetic_algorithm(state, BEST_SEED)
     return state.build_assignments(dict(zip(state.stage_symbols, best_candidate[0])))
@@ -60,19 +53,12 @@ def find_best_seed(
         if candidate[2] + EPSILON < best_cost:
             best_cost = candidate[2]
             best_seed = seed
-            print(f"Seed {seed}: custo {candidate[2]:.4f} (nova melhor)")
+            print(f"Seed {seed}: custo {candidate[2]:.6f} (nova melhor)")
         else:
-            print(f"Seed {seed}: custo {candidate[2]:.4f}")
+            print(f"Seed {seed}: custo {candidate[2]:.6f}")
 
+    print(f"\nMelhor seed: {best_seed}, custo: {best_cost:.6f}")
     return best_seed, best_cost
-
-
-def optimize_with_hill_climbing_simulated_annealing(
-    state: TeamPlannerState,
-) -> PlannerSolution:
-    """Mantem o nome antigo da API publica, agora redirecionando para o GA."""
-
-    return optimize_with_genetic_algorithm(state)
 
 
 # ---------------------------------------------------------------------------
