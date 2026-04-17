@@ -7,7 +7,7 @@
 ## Integrantes
 
 - `Breno de Andrade Soares` - Matricula: `2320363`
-- `Dante` - Matricula: `XXXXXXXXX`
+- `Dante` - Matricula: 2321406
 - `Rafael Soares Estevão` - Matricula: `2320470`
 
 Implementacao do trabalho `INF1771_IA_Trabalho_1_2026.1.pdf` usando:
